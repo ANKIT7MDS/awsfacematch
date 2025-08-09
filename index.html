@@ -1,274 +1,268 @@
 <!doctype html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>भारतीय जनता पार्टी मंदसौर — WedMatch खोज</title>
+  <title>WedMatch — Upload & Search</title>
   <style>
-    :root{
-      --bg:#fff7f0; --card:#fff; --text:#231f20; --muted:#6b7280;
-      --orange:#ff6f00; --orange-2:#ff8f1f; --orange-3:#fff0e0;
-      --border:#f0d4b6; --ring:rgba(255,111,0,.25);
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Helvetica,Arial,"Noto Sans Devanagari",sans-serif}
-    header{background:linear-gradient(90deg,var(--orange),var(--orange-2));color:#fff;padding:18px 14px;position:sticky;top:0;z-index:20;box-shadow:0 6px 20px rgba(255,111,0,.25)}
-    .wrap{max-width:1040px;margin:0 auto;padding:0 14px}
-    h1{margin:0;font-weight:800;letter-spacing:.3px}
-    small.tag{display:inline-block;margin-top:4px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.2)}
-
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:18px 0;box-shadow:0 6px 24px rgba(17,24,39,.05)}
-    .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-    label{font-weight:600}
-    input[type="text"],input[type="tel"],input[type="file"],select{
-      width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff
-    }
-    input:focus,select:focus{outline:none;box-shadow:0 0 0 4px var(--ring);border-color:var(--orange)}
-    .muted{color:var(--muted);font-size:13px}
-    button{appearance:none;border:0;background:var(--orange);color:#fff;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(255,111,0,.35)}
-    button.secondary{background:#fff;color:var(--orange);border:1px solid var(--orange)}
-    button.copy{background:#fff;border:1px dashed var(--border);color:#8a4b00}
-    button[disabled]{opacity:.6;cursor:not-allowed;box-shadow:none}
-
-    .sticky-bar{position:sticky;bottom:0;background:#fff;padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
-
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:18px 0}
-    .thumb{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
-    .thumb .img{aspect-ratio:4/3;background:var(--orange-3);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--orange)}
-    .thumb img{width:100%;height:100%;object-fit:cover}
-    .thumb .meta{padding:12px}
-    .chip{display:inline-block;background:var(--orange-3);color:#8a4b00;border:1px solid var(--border);padding:4px 8px;border-radius:999px;font-size:12px;margin-right:6px}
-    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-
-    /* Camera modal */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
-    .modal.open{display:flex}
-    .sheet{width:min(560px,92vw);background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--border)}
-    .sheet header{position:unset;padding:10px 14px}
-    .cam{display:flex;flex-direction:column;gap:10px;padding:12px}
-    video,canvas{width:100%;border-radius:12px;background:#000}
-    .row-btns{display:flex;gap:10px;justify-content:flex-end}
+    :root { --bg:#0b1020; --card:#141a2f; --muted:#90a0c0; --text:#eaf0ff; --accent:#6aa1ff; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial}
+    header{padding:18px 16px;border-bottom:1px solid #202a4a;background:#0f1528;position:sticky;top:0;z-index:2}
+    header h1{margin:0;font-size:18px}
+    .container{max-width:1000px;margin:24px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media (min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+    .card{background:var(--card);border:1px solid #202a4a;border-radius:14px;padding:16px;box-shadow:0 1px 0 #000}
+    h2{margin:0 0 10px;font-size:16px}
+    label{display:block;margin:8px 0 4px;color:var(--muted)}
+    input,select,button,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a355e;background:#0f1528;color:var(--text)}
+    input[type=file]{padding:8px}
+    button{cursor:pointer;background:linear-gradient(180deg,#3b67ff,#3155d8);border:0}
+    button.secondary{background:#1b2342}
+    .row{display:flex;gap:8px}
+    .row > *{flex:1}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block;background:#1b2342;border:1px solid #2a355e;border-radius:999px;padding:4px 10px;font-size:12px}
+    .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .result{background:#0f1528;border:1px solid #263159;border-radius:12px;overflow:hidden}
+    .result .meta{padding:10px;border-top:1px solid #263159}
+    code{background:#0e1324;border:1px solid #1e294e;color:#cde; padding:2px 4px;border-radius:6px}
+    .tiny{font-size:12px}
+    .ok{color:#7ef293}
+    .err{color:#ff8a8a}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #2a355e;border-top-color:#6aa1ff;border-radius:50%;animation:spin .9s linear infinite;vertical-align:-3px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    a.btn{display:inline-block;text-decoration:none;color:#fff;background:#2b4dd8;padding:8px 10px;border-radius:10px}
+    .sep{height:1px;background:#202a4a;margin:14px 0}
   </style>
 </head>
 <body>
 <header>
-  <div class="wrap">
-    <h1>भारतीय जनता पार्टी मंदसौर</h1>
-    <small class="tag">WedMatch — चेहरा खोज</small>
-  </div>
+  <h1>WedMatch — Upload & Search</h1>
 </header>
+<div class="container">
 
-<main class="wrap">
-  <!-- Form -->
-  <section class="card">
-    <h2 style="margin:6px 0 12px">खोज फॉर्म</h2>
+  <!-- CONFIG -->
+  <div class="card">
+    <h2>Config</h2>
     <div class="row">
       <div>
-        <label>पूरा नाम</label>
-        <input id="name" type="text" placeholder="अपना नाम" />
+        <label>API: /upload-url</label>
+        <input id="cfgUpload" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2/upload-url" />
       </div>
       <div>
-        <label>मोबाइल नंबर</label>
-        <input id="mobile" type="tel" placeholder="10 अंकों का नंबर" pattern="^[0-9]{10}$" />
-        <div class="muted">फॉर्म वैकल्पिक है — बस रिकॉर्ड रखने हेतु।</div>
+        <label>API: /search</label>
+        <input id="cfgSearch" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2/search" />
+      </div>
+      <div>
+        <label>API: /download</label>
+        <input id="cfgDownload" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2/download" />
       </div>
     </div>
-
-    <div class="row" style="margin-top:10px">
+    <div class="row" style="margin-top:8px">
       <div>
-        <label>सेल्फ़ी (कैमरा)</label>
-        <div style="display:flex;gap:8px">
-          <input id="selfie" type="file" accept="image/*" capture="user" />
-          <button class="secondary" id="openCam">Open Camera</button>
+        <label>S3 Bucket</label>
+        <input id="cfgBucket" placeholder="wedmatch-photos" />
+      </div>
+      <div>
+        <label>Default Event (optional)</label>
+        <input id="cfgDefaultEvent" placeholder="demo-2025-01" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="btnSaveCfg">Save Config</button>
+      </div>
+    </div>
+    <div class="tiny muted" style="margin-top:6px">Tip: URL में <code>?event=EVENT123</code> देने से Event auto-fill हो जाएगा.</div>
+  </div>
+
+  <div class="grid">
+    <!-- UPLOAD -->
+    <div class="card">
+      <h2>1) Upload to an Event</h2>
+      <label>Event ID</label>
+      <input id="eventId" placeholder="event-2025-08" />
+      <div class="row">
+        <div>
+          <label>Choose Photo</label>
+          <input id="file" type="file" accept="image/*" />
         </div>
-        <div class="muted">मोबाइल पर कैमरा खुलेगा; या “Open Camera” से इन-पेज कैमरा।</div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="btnUpload">Generate Link & Upload</button>
+        </div>
       </div>
-      <div>
-        <label>फोटो (गैलरी से)</label>
-        <input id="photo" type="file" accept="image/*" />
-      </div>
-      <div>
-        <label>S3 Key (अगर फोटो S3 में है)</label>
-        <input id="s3key" type="text" placeholder="events/.../originals/abc.jpg" />
-      </div>
+      <div id="upStatus" class="tiny muted" style="margin-top:8px"></div>
+      <div id="lastKey" class="tiny" style="margin-top:6px"></div>
+      <div class="sep"></div>
+      <div class="tiny muted">Uploaded files land under <code>events/&lt;eventId&gt;/incoming/</code> with metadata <code>x-amz-meta-eventid</code>.</div>
     </div>
 
-    <div class="sticky-bar">
-      <button id="go">Search</button>
-      <span id="status" class="muted"></span>
-    </div>
-  </section>
-
-  <!-- Results -->
-  <section>
-    <div id="count" class="muted"></div>
-    <div id="list" class="grid"></div>
-  </section>
-</main>
-
-<!-- Camera Modal -->
-<div class="modal" id="camModal" aria-hidden="true">
-  <div class="sheet">
-    <header><strong>कैमरा</strong></header>
-    <div class="cam">
-      <video id="camVideo" autoplay playsinline></video>
-      <canvas id="camCanvas" style="display:none"></canvas>
-      <div class="row-btns">
-        <button class="secondary" id="camClose">Close</button>
-        <button id="camSnap">Capture</button>
+    <!-- SEARCH -->
+    <div class="card">
+      <h2>2) Search Matches</h2>
+      <div class="row">
+        <div>
+          <label>Use Local Image</label>
+          <input id="srchFile" type="file" accept="image/*" />
+        </div>
+        <div>
+          <label>…or S3 Key</label>
+          <input id="srchKey" placeholder="events/demo-2025-01/originals/xxx.jpg" />
+        </div>
       </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnSearch">Search</button>
+        <button class="secondary" id="btnClear">Clear</button>
+      </div>
+      <div id="srchStatus" class="tiny muted" style="margin-top:8px"></div>
+      <div class="results" id="results"></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>How it works</h2>
+    <div class="tiny muted">1) Frontend calls <code>/upload-url</code> to get a presigned POST; 2) Browser uploads file directly to S3; 3) You can trigger a background indexer (optional); 4) Search via <code>/search</code>, then presign downloads via <code>/download</code>.</div>
   </div>
 </div>
 
 <script>
-  // ---------- CONFIG (अपना API/BUCKET यहाँ सेट करें) ----------
-  const API_URL      = "https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2/search";
-  const DOWNLOAD_API = "https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2/download";
-  const BUCKET       = "wedmatch-photos"; // S3 bucket name
+(function(){
+  const q = new URL(location.href).searchParams;
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    uploadApi: localStorage.getItem('wm.uploadApi') || '',
+    searchApi: localStorage.getItem('wm.searchApi') || '',
+    downloadApi: localStorage.getItem('wm.downloadApi') || '',
+    bucket: localStorage.getItem('wm.bucket') || 'wedmatch-photos',
+    defaultEvent: q.get('event') || localStorage.getItem('wm.defaultEvent') || ''
+  };
+  function renderCfg(){
+    $('cfgUpload').value = state.uploadApi;
+    $('cfgSearch').value = state.searchApi;
+    $('cfgDownload').value = state.downloadApi;
+    $('cfgBucket').value = state.bucket;
+    $('cfgDefaultEvent').value = state.defaultEvent;
+    if (state.defaultEvent) $('eventId').value = state.defaultEvent;
+  }
+  renderCfg();
+  $('btnSaveCfg').onclick = () => {
+    state.uploadApi = $('cfgUpload').value.trim();
+    state.searchApi = $('cfgSearch').value.trim();
+    state.downloadApi = $('cfgDownload').value.trim();
+    state.bucket = $('cfgBucket').value.trim();
+    state.defaultEvent = $('cfgDefaultEvent').value.trim();
+    localStorage.setItem('wm.uploadApi', state.uploadApi);
+    localStorage.setItem('wm.searchApi', state.searchApi);
+    localStorage.setItem('wm.downloadApi', state.downloadApi);
+    localStorage.setItem('wm.bucket', state.bucket);
+    localStorage.setItem('wm.defaultEvent', state.defaultEvent);
+    toast('Saved config');
+  };
 
-  // ---------- Helpers ----------
-  const el = (id) => document.getElementById(id);
-  const toBase64 = (file) => new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-  const filenameFromKey = (key='') => key.split('/').pop() || 'photo.jpg';
+  function toast(msg, ok){
+    const el = document.createElement('div');
+    el.className = 'tiny ' + (ok?'ok':'');
+    el.textContent = msg;
+    $('upStatus').innerHTML = '';
+    $('upStatus').appendChild(el);
+  }
 
-  async function getPresignedUrl(s3Key) {
-    const resp = await fetch(DOWNLOAD_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ s3Key }),
+  async function getUploadUrl(eventId, file){
+    const res = await fetch(state.uploadApi, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ eventId, fileName: file.name, contentType: file.type })
     });
-    const data = await resp.json();
-    if (!data.url) throw new Error("No URL from /download");
-    return data.url;
+    if(!res.ok){ const e = await res.json().catch(()=>({})); throw new Error(e.message || e.error || res.statusText); }
+    return res.json();
   }
 
-  // ---------- Camera (in-page) ----------
-  const camModal  = el('camModal');
-  const camVideo  = el('camVideo');
-  const camCanvas = el('camCanvas');
-  let camStream;
-
-  el('openCam').onclick = async () => {
-    try {
-      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio:false });
-      camVideo.srcObject = camStream;
-      camModal.classList.add('open');
-      camModal.setAttribute('aria-hidden','false');
-    } catch (e) {
-      alert("Camera open failed (permission / https / device).");
-      console.error(e);
-    }
-  };
-  el('camClose').onclick = () => closeCam();
-  function closeCam(){
-    camModal.classList.remove('open');
-    camModal.setAttribute('aria-hidden','true');
-    if (camStream) { camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+  async function postToS3(url, fields, file){
+    const fd = new FormData(); Object.entries(fields).forEach(([k,v])=>fd.append(k,v)); fd.append('file', file);
+    const res = await fetch(url, { method:'POST', body: fd });
+    if(!res.ok) throw new Error('S3 upload failed ' + res.status);
+    return true;
   }
-  el('camSnap').onclick = async () => {
+
+  $('btnUpload').onclick = async () => {
+    const ev = $('eventId').value.trim(); const f = $('file').files[0];
+    if(!state.uploadApi) return toast('Set /upload-url API in Config');
+    if(!ev) return toast('Enter Event ID');
+    if(!f) return toast('Pick a file');
+    $('upStatus').innerHTML = '<span class="spinner"></span> Preparing link…';
     try {
-      const w = camVideo.videoWidth, h = camVideo.videoHeight;
-      if (!w || !h) return;
-      camCanvas.width = w; camCanvas.height = h;
-      const ctx = camCanvas.getContext('2d');
-      ctx.drawImage(camVideo, 0, 0, w, h);
-      const dataUrl = camCanvas.toDataURL('image/jpeg', 0.92);
-      // Put captured image into "selfie" file input (as a Blob) to reuse the same logic
-      const res = await fetch(dataUrl); const blob = await res.blob();
-      const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
-      // make a DataTransfer to set input files
-      const dt = new DataTransfer(); dt.items.add(file);
-      el('selfie').files = dt.files;
-      closeCam();
-      alert("सेल्फ़ी कैप्चर हो गई, अब Search दबाएँ।");
-    } catch (e) {
-      console.error(e); alert("Capture failed");
-    }
+      const { url, fields, key } = await getUploadUrl(ev, f);
+      $('upStatus').innerHTML = '<span class="spinner"></span> Uploading…';
+      await postToS3(url, fields, f);
+      $('upStatus').innerHTML = '✅ Uploaded!';
+      $('lastKey').innerHTML = 'S3 Key: <code>'+key+'</code>';
+      // convenience: copy to search box
+      $('srchKey').value = key;
+    } catch(e){ $('upStatus').innerHTML = '<span class="err">❌ '+e.message+'</span>'; }
   };
 
-  // ---------- Result Card ----------
-  function card(item){
-    const div = document.createElement('div'); div.className = 'thumb';
+  $('btnSearch').onclick = async () => {
+    const file = $('srchFile').files[0];
+    const s3Key = $('srchKey').value.trim();
+    if(!state.searchApi) return $('srchStatus').textContent = 'Set /search API in Config';
+    if(!file && !s3Key) return $('srchStatus').textContent = 'Pick a file or provide S3 key';
 
-    // thumbnail (public हो तो दिखे; private हो तो fallback)
-    const imgWrap = document.createElement('div'); imgWrap.className = 'img';
-    const img = document.createElement('img'); img.loading = 'lazy';
-    const publicUrl = `https://${BUCKET}.s3.ap-south-1.amazonaws.com/${encodeURI(item.s3Key||'')}`;
-    img.src = publicUrl; img.onerror = () => { imgWrap.textContent = 'पूर्वावलोकन'; };
-    imgWrap.appendChild(img);
-
-    const meta = document.createElement('div'); meta.className = 'meta';
-    meta.innerHTML = `
-      <div style="font-weight:800">${item.photoId || '(photo)'} </div>
-      <div class="muted">Similarity: ${item.similarity ?? '-'}%</div>
-      <div class="muted">Event: ${item.eventId || '-'}</div>
-      <div class="muted" style="margin-top:6px;word-break:break-all">
-        <span class="chip">S3 key</span>${item.s3Key || '-'}
-      </div>
-    `;
-
-    const actions = document.createElement('div'); actions.className = 'actions';
-
-    // Open (new tab) via presigned
-    const openBtn = document.createElement('button'); openBtn.className = 'secondary'; openBtn.textContent = 'Open';
-    openBtn.onclick = async () => {
-      openBtn.disabled = true;
-      try { const url = await getPresignedUrl(item.s3Key); window.open(url, "_blank"); }
-      catch(e){ alert('Open failed'); console.error(e); }
-      finally{ openBtn.disabled = false; }
-    };
-
-    // Download (force)
-    const dlBtn = document.createElement('button'); dlBtn.className = 'secondary'; dlBtn.textContent = 'Download';
-    dlBtn.onclick = async () => {
-      dlBtn.disabled = true;
-      try{
-        const url = await getPresignedUrl(item.s3Key);
-        const a = document.createElement('a'); a.href = url; a.download = filenameFromKey(item.s3Key||'photo.jpg');
-        document.body.appendChild(a); a.click(); a.remove();
-      }catch(e){ alert('Download failed'); console.error(e); }
-      finally{ dlBtn.disabled = false; }
-    };
-
-    const cp = document.createElement('button'); cp.className = 'copy'; cp.textContent='Copy S3 key';
-    cp.onclick = async ()=>{ await navigator.clipboard.writeText(item.s3Key || ''); cp.textContent='Copied!'; setTimeout(()=>cp.textContent='Copy S3 key',1500); };
-
-    actions.append(openBtn, dlBtn, cp);
-    meta.appendChild(actions);
-
-    div.append(imgWrap, meta);
-    return div;
-  }
-
-  // ---------- Search ----------
-  el('go').onclick = async () => {
-    const status = el('status'), list = el('list'), count = el('count');
-    status.textContent = 'Searching...'; list.innerHTML=''; count.textContent='';
-    try{
-      const selfie = el('selfie').files[0];
-      const photo  = el('photo').files[0];
-      const s3key  = el('s3key').value.trim();
-
+    $('srchStatus').innerHTML = '<span class="spinner"></span> Searching…';
+    try {
       let payload = {};
-      if (selfie)      payload.imageBase64 = await toBase64(selfie);
-      else if (photo)  payload.imageBase64 = await toBase64(photo);
-      else if (s3key)  { payload.s3Bucket = BUCKET; payload.s3Key = s3key; }
-      else { alert('सेल्फ़ी/फोटो अपलोड करें या S3 Key दें'); status.textContent=''; return; }
-
-      const resp = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const data = await resp.json();
-      const items = data.matches || [];
-      count.textContent = `Found ${items.length} result(s)`;
-      items.forEach(m => list.appendChild(card(m)));
-      status.textContent = 'Done';
-    }catch(e){ console.error(e); status.textContent = 'Error (details: console)'; alert('खोज असफल—कंसोल देखें'); }
+      if(file){
+        const b64 = await fileToBase64(file);
+        payload.imageBase64 = stripDataUrl(b64);
+      } else {
+        payload.s3Bucket = state.bucket;
+        payload.s3Key = s3Key;
+      }
+      const res = await fetch(state.searchApi, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if(!res.ok) throw new Error(json.message || json.error || res.statusText);
+      $('srchStatus').innerHTML = 'Found '+(json.matches?.length||0)+' matches';
+      renderResults(json.matches||[]);
+    } catch(e){ $('srchStatus').innerHTML = '<span class="err">❌ '+e.message+'</span>'; $('results').innerHTML=''; }
   };
+
+  $('btnClear').onclick = ()=>{ $('srchFile').value=''; $('srchKey').value=''; $('results').innerHTML=''; $('srchStatus').textContent=''; };
+
+  async function renderResults(arr){
+    const box = $('results'); box.innerHTML='';
+    for(const m of arr){
+      const card = document.createElement('div'); card.className='result';
+      const meta = document.createElement('div'); meta.className='meta';
+      meta.innerHTML = `Similarity: <b>${m.similarity||0}%</b><br>`+
+        `<span class="tiny muted">eventId:</span> <code>${m.eventId||'-'}</code> · `+
+        `<span class="tiny muted">photoId:</span> <code>${m.photoId||'-'}</code><br>`+
+        `<span class="tiny muted">s3Key:</span> <code>${m.s3Key||'-'}</code><br>`+
+        `<div class="row" style="margin-top:6px">${downloadButtonHtml(m.s3Key)}</div>`;
+      card.appendChild(meta);
+      box.appendChild(card);
+    }
+  }
+
+  function downloadButtonHtml(key){
+    if(!key) return '<span class="tiny muted">No key</span>';
+    return `<a class="btn" href="#" onclick="return presignAndOpen('${encodeURIComponent(key)}')">Open</a>`;
+  }
+
+  window.presignAndOpen = async function(keyEnc){
+    const key = decodeURIComponent(keyEnc);
+    if(!state.downloadApi) { alert('Set /download API in Config'); return false; }
+    try{
+      const res = await fetch(state.downloadApi, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bucket: state.bucket, s3Key: key }) });
+      const json = await res.json(); if(!res.ok) throw new Error(json.message || json.error || res.statusText);
+      window.open(json.url, '_blank');
+    }catch(e){ alert('Presign failed: '+e.message); }
+    return false;
+  }
+
+  function fileToBase64(file){
+    return new Promise((resolve,reject)=>{ const r = new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
+  }
+  function stripDataUrl(s){ const i=s.indexOf(','); return i>=0?s.slice(i+1):s; }
+})();
 </script>
 </body>
 </html>
