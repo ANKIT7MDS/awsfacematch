@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>भारतीय जनता पार्टी — मंदसौर | WedMatch</title>
   <style>
-    :root{
-      --bg:#0b0e14; --card:#121722; --muted:#9fb0c7; --text:#f7fbff; --line:#1f2a44;
-      --accent:#ff7a00; --accent2:#ffb347; --btn:#ff7a00; --btn2:#ff9b2f; --ok:#79f2a5; --err:#ff8a8a;
+    :root { --bg:#fff7ed; --card:#fff1e0; --muted:#6b6b6b; --text:#2b2b2b; --line:#ffd7aa; --accent:#ff7a00; --accent2:#ffb347; --btn:#ff7a00; --btn2:#ff9b2f; --ok:#1a8f4e; --err:#e03535;
     }
     *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,#0b0e14,#0d1321);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    header{padding:18px 14px;background:linear-gradient(90deg,#1a2140,#141a33);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+    body{margin:0;background:linear-gradient(180deg,#fff7ed,#ffe9cc);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    header{padding:18px 14px;background:linear-gradient(90deg,#ffae42,#ff8a00);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
     header .wrap{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:12px}
     header h1{margin:0;font-size:18px;letter-spacing:.3px}
     header .badge{margin-left:auto;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#261400;border-radius:999px;padding:6px 10px;font-weight:600}
@@ -72,11 +70,12 @@
       </div>
 
       <div id="camBox" style="display:none;margin-top:10px" class="row">
-        <video id="video" playsinline style="width:100%;border-radius:12px;border:1px solid #243158"></video>
+        <video id="video" playsinline style="width:100%;max-height:300px;border-radius:12px;border:1px solid #f7c27c"></video>
         <div style="max-width:220px">
-          <button id="btnCapture" style="margin-bottom:8px">कैप्चर</button>
-          <button id="btnCloseCam" class="secondary">कैमरा बंद</button>
+          <button id="btnCapture" style="margin-bottom:8px;width:100%">फोटो कैप्चर</button>
+          <button id="btnCloseCam" class="secondary" style="width:100%">कैमरा बंद</button>
         </div>
+      </div>
       </div>
 
       <div id="status" class="tiny muted" style="margin-top:8px"></div>
@@ -85,11 +84,14 @@
     <!-- RESULTS -->
     <div class="card" style="margin-top:14px">
       <h2>Results</h2>
+      <div class="row" style="margin-bottom:8px">
+        <button id="btnDlSel" class="secondary" style="max-width:220px">चुनी हुई फ़ोटो डाउनलोड</button>
+      </div>
       <div id="results" class="grid"></div>
       <div id="nores" class="tiny muted"></div>
     </div>
 
-    <button class="pill" id="btnAdmin">Admin</button>
+    <button class="pill" id="btnAdmin" style="display:none">Admin</button>
   </div>
 
   <!-- ADMIN DIALOG (hidden from public use) -->
@@ -159,14 +161,28 @@
   // ====== END-USER SEARCH ======
   $('btnSearch').onclick = async ()=>{
     const name = $('name').value.trim(); const mobile = $('mobile').value.trim();
-    const file = capturedFile || $('fileSelfie').files[0];
+    let file = capturedFile || $('fileSelfie').files[0];
     if(!name || !mobile) return setStatus('कृपया नाम और मोबाइल भरें', true);
     if(!file) return setStatus('सेल्फी लें या फ़ाइल चुनें', true);
+
+    // Validate format (HEIC/WEBP not supported by Rekognition)
+    const okTypes = ['image/jpeg','image/png'];
+    if (file.type && !okTypes.includes(file.type)) {
+      setStatus('कृपया JPEG या PNG फ़ाइल दें (HEIC समर्थित नहीं). कैमरा से selfie लें।', true);
+      return;
+    }
+    // If PNG, convert to JPEG for best compatibility
+    file = await toJpegIfPng(file);
 
     setStatus('<span class="spinner"></span> खोज जारी…');
     try{
       const b64 = await fileToBase64(file);
       const payload = { imageBase64: stripDataUrl(b64) };
+      const res = await fetch(CFG.searchApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      const json = await res.json(); if(!res.ok) throw new Error(json.message || json.error || res.statusText);
+      setStatus('Found '+(json.matches?.length||0)+' matches'); renderResults(json.matches||[]);
+    }catch(e){ setStatus('❌ '+e.message,true); }
+  };
       const res = await fetch(CFG.searchApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
       const json = await res.json(); if(!res.ok) throw new Error(json.message || json.error || res.statusText);
       setStatus('Found '+(json.matches?.length||0)+' matches'); renderResults(json.matches||[]);
@@ -183,13 +199,13 @@
       meta.innerHTML = `<span class="chip">${m.similarity||0}% match</span>`+
         `<div class="row" style="margin-top:6px"><button data-key="${m.s3Key||''}" class="secondary dl">Download</button></div>`;
       card.appendChild(meta); box.appendChild(card);
-      if(m.s3Key){ try{ const url = await presign(m.s3Key); img.src=url; img.loading='lazy'; meta.querySelector('button.dl').onclick = ()=>window.open(url,'_blank'); }catch{} }
+      if(m.s3Key){ try{ const url = await presign(m.s3Key); img.src=url; img.loading='lazy'; meta.querySelector('button.dl').onclick = ()=>directDownload(url); }catch{} }
     }
   }
 
   async function presign(key){
-    const res = await fetch(CFG.downloadApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bucket: CFG.bucket, s3Key: key })});
-    const j = await res.json(); if(!res.ok) throw new Error(j.message || j.error || res.statusText); return j.url;
+    return fetch(CFG.downloadApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bucket: CFG.bucket, s3Key: key, forceDownload: true })})
+      .then(r=>r.json()).then(j=>{ if(!j.url) throw new Error(j.message||j.error||'no url'); return j.url; });
   }
 
   // ====== ADMIN PANEL ======
@@ -223,11 +239,36 @@
 
   function addLine(s){ const p=document.createElement('div'); p.textContent=s; $('adList').appendChild(p); }
 
+  // Bulk download selected — sequential fallback
+  document.getElementById('btnDlSel').onclick = async ()=>{
+    const picks=[...document.querySelectorAll('input.pick:checked')].map(x=>x.dataset.key).filter(Boolean);
+    if(!picks.length) { alert('कोई फ़ोटो चुनी नहीं गई'); return; }
+    for(const k of picks){ try{ const url=await presign(k); await directDownload(url); }catch(e){ console.error('DL fail',k,e); } }
+  };
+
+  async function directDownload(url){
+    const a=document.createElement('a'); a.href=url; a.download=''; document.body.appendChild(a); a.click(); a.remove();
+  }
+
   // ====== helpers ======
   function setStatus(msg,isErr){ const el=$('status'); el.innerHTML=msg; el.className='tiny '+(isErr?'err':'muted'); }
   function adStatus(msg){ $('adStatus').innerHTML=msg; }
   function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
   function stripDataUrl(s){ const i=s.indexOf(','); return i>=0?s.slice(i+1):s; }
+
+  // Convert PNG → JPEG on the client (HEIC not supported; camera already gives JPEG)
+  async function toJpegIfPng(file){
+    try{
+      if(file && file.type === 'image/png'){
+        const url = URL.createObjectURL(file); const img = new Image(); img.src=url; await img.decode();
+        const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+        c.getContext('2d').drawImage(img,0,0); URL.revokeObjectURL(url);
+        const blob = await new Promise(r=>c.toBlob(r,'image/jpeg',0.92));
+        return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
+      }
+    }catch{ /* fall back to original file */ }
+    return file;
+  }
 
   async function resizeIfNeeded(file, maxSide=3000, quality=0.90){
     const imgUrl = URL.createObjectURL(file); const img = new Image(); img.src = imgUrl; await img.decode();
