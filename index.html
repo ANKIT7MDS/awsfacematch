@@ -5,19 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>भारतीय जनता पार्टी — मंदसौर | WedMatch</title>
   <style>
-    :root { --bg:#fff7ed; --card:#fff1e0; --muted:#6b6b6b; --text:#2b2b2b; --line:#ffd7aa; --accent:#ff7a00; --accent2:#ffb347; --btn:#ff7a00; --btn2:#ff9b2f; --ok:#1a8f4e; --err:#e03535;
-    }
+    :root{ --bg:#fff7ed; --card:#fff1e0; --muted:#6b6b6b; --text:#222; --line:#ffd7aa; --accent:#ff7a00; --accent2:#ffb347; --btn:#ff7a00; --btn2:#ff9b2f; --ok:#15803d; --err:#e11d48; }
     *{box-sizing:border-box}
     body{margin:0;background:linear-gradient(180deg,#fff7ed,#ffe9cc);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
     header{padding:18px 14px;background:linear-gradient(90deg,#ffae42,#ff8a00);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
     header .wrap{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:12px}
     header h1{margin:0;font-size:18px;letter-spacing:.3px}
-    header .badge{margin-left:auto;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#261400;border-radius:999px;padding:6px 10px;font-weight:600}
+    header .badge{margin-left:auto;background:#00000022;color:#1f1300;border-radius:999px;padding:6px 10px;font-weight:700}
+
     .container{max-width:980px;margin:16px auto;padding:0 14px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 1px 0 #0006}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 1px 0 #0002}
     h2{margin:0 0 10px;font-size:18px}
     label{display:block;margin:.6rem 0 .35rem;color:var(--muted)}
-    input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #273458;background:#0e1426;color:var(--text)}
+    input,button,select{width:100%;padding:12px;border-radius:12px;border:1px solid #f7c27c;background:#fff;color:#111}
+    input::placeholder{color:#9b9b9b}
     input[type=file]{padding:8px}
     button{cursor:pointer;background:linear-gradient(180deg,var(--btn),var(--btn2));border:0;color:#2a1200;font-weight:700}
     button.secondary{background:#182141;color:#cfe}
@@ -25,18 +26,19 @@
     .row>*{flex:1}
     .muted{color:var(--muted)} .tiny{font-size:12px}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
-    .thumb{background:#0f1429;border:1px solid #243158;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-    .thumb img{width:100%;height:170px;object-fit:cover;background:#0d1326}
-    .thumb .meta{padding:10px;border-top:1px solid #243158}
-    .chip{display:inline-block;background:#1a2448;border:1px solid #2a3c73;color:#cfe;padding:2px 8px;border-radius:999px;font-size:11px}
+    .thumb{position:relative;background:#fff;border:1px solid #f7c27c;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .thumb img{width:100%;height:170px;object-fit:cover;background:#f8f0e6}
+    .thumb .meta{padding:10px;border-top:1px solid #f7c27c}
+    .kebab{position:absolute;right:8px;top:8px;background:#0008;color:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer}
+    .menu{position:absolute;right:8px;top:36px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);display:none;min-width:140px;z-index:3}
+    .menu a{display:block;padding:10px 12px;color:#222;text-decoration:none}
+    .menu a:hover{background:#fff6e9}
     .pill{position:fixed;right:12px;bottom:12px;background:linear-gradient(180deg,var(--btn),var(--btn2));border:none;color:#2a1200;border-radius:999px;padding:10px 14px;font-weight:700;cursor:pointer}
     .ok{color:var(--ok)} .err{color:var(--err)}
-    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #2a355e;border-top-color:#ffb347;border-radius:50%;animation:spin .9s linear infinite;vertical-align:-3px}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fed7aa;border-top-color:#ff8a00;border-radius:50%;animation:spin .9s linear infinite;vertical-align:-3px}
     @keyframes spin{to{transform:rotate(360deg)}}
-    dialog{border:1px solid #243158;border-radius:16px;background:var(--card);color:var(--text);width:min(720px,96%)}
-    dialog::backdrop{background:rgba(0,0,0,.55)}
-    .closeX{position:absolute;right:10px;top:8px;background:#1b2342;border:1px solid #2a355e;border-radius:10px;padding:6px 10px;cursor:pointer}
-    progress{width:100%;height:10px;border-radius:10px;overflow:hidden}
+    dialog{border:1px solid #f7c27c;border-radius:16px;background:var(--card);color:var(--text);width:min(720px,96%)}
+    dialog::backdrop{background:rgba(0,0,0,.45)}
   </style>
 </head>
 <body>
@@ -48,7 +50,6 @@
   </header>
 
   <div class="container">
-    <!-- END-USER: Selfie Search only -->
     <div class="card">
       <h2>अपनी फोटो ढूँढें (Selfie Search)</h2>
       <div class="row">
@@ -76,15 +77,13 @@
           <button id="btnCloseCam" class="secondary" style="width:100%">कैमरा बंद</button>
         </div>
       </div>
-      </div>
 
       <div id="status" class="tiny muted" style="margin-top:8px"></div>
     </div>
 
-    <!-- RESULTS -->
     <div class="card" style="margin-top:14px">
       <h2>Results</h2>
-      <div class="row" style="margin-bottom:8px">
+      <div id="bulkBar" class="row" style="margin-bottom:8px; display:none">
         <button id="btnDlSel" class="secondary" style="max-width:220px">चुनी हुई फ़ोटो डाउनलोड</button>
       </div>
       <div id="results" class="grid"></div>
@@ -94,58 +93,19 @@
     <button class="pill" id="btnAdmin" style="display:none">Admin</button>
   </div>
 
-  <!-- ADMIN DIALOG (hidden from public use) -->
-  <dialog id="dlgAdmin">
-    <button class="closeX" id="xClose">Close</button>
-    <div style="padding:16px">
-      <h2>Admin — Upload to an Event</h2>
-      <div class="tiny muted" style="margin:4px 0 10px">यह सेक्शन end‑users के लिए नहीं है.</div>
-
-      <div class="row">
-        <div>
-          <label>Event ID</label>
-          <input id="adEvent" placeholder="event-2025-08"/>
-        </div>
-        <div>
-          <label>Choose Photos (multiple)</label>
-          <input id="adFiles" type="file" accept="image/*" multiple />
-        </div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="adUpload">Generate Links & Upload</button>
-        <button id="adClear" class="secondary">Clear</button>
-      </div>
-      <div class="tiny muted" style="margin-top:6px">बड़ी इमेज अपने‑आप 3000px तक resize होंगी (JPEG, ~0.9 quality).</div>
-      <div id="adStatus" class="tiny muted" style="margin-top:8px"></div>
-      <div id="adList" class="tiny" style="margin-top:6px"></div>
-
-      <div class="card" style="margin-top:14px">
-        <h2>Settings (fixed)</h2>
-        <div class="tiny muted">URLs हार्डकोडेड हैं—public build में यूज़र को दिखते नहीं।</div>
-        <code id="cfgShow"></code>
-      </div>
-    </div>
-  </dialog>
-
 <script>
 (async function(){
   const $ = id => document.getElementById(id);
 
-  // ====== HARD-CODED CONFIG (Prod) ======
+  // ====== CONFIG ======
   const BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
-  const CFG = {
-    uploadApi: BASE + '/upload-url',
-    searchApi: BASE + '/search',
-    downloadApi: BASE + '/download',
-    bucket: 'wedmatch-photos'
-  };
-  $('cfgShow').textContent = JSON.stringify(CFG, null, 2);
+  const CFG = { uploadApi: BASE + '/upload-url', searchApi: BASE + '/search', downloadApi: BASE + '/download', bucket: 'wedmatch-photos' };
 
   // ====== CAMERA ======
   let stream = null, capturedFile = null;
   $('btnOpenCam').onclick = async ()=>{
     try{ stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
-      $('camBox').style.display='flex'; $('video').srcObject = stream; $('video').play();
+      $('camBox').style.display='flex'; $('video').srcObject = stream; await $('video').play();
     }catch(e){ setStatus('❌ कैमरा नहीं खुला: '+e.message,true); }
   };
   $('btnCloseCam').onclick = ()=> stopCam();
@@ -158,129 +118,74 @@
     }catch(e){ setStatus('❌ Capture failed: '+e.message,true); }
   };
 
-  // ====== END-USER SEARCH ======
+  // ====== SEARCH ======
   $('btnSearch').onclick = async ()=>{
     const name = $('name').value.trim(); const mobile = $('mobile').value.trim();
     let file = capturedFile || $('fileSelfie').files[0];
     if(!name || !mobile) return setStatus('कृपया नाम और मोबाइल भरें', true);
     if(!file) return setStatus('सेल्फी लें या फ़ाइल चुनें', true);
 
-    // Validate format (HEIC/WEBP not supported by Rekognition)
+    // Validate allowed types
     const okTypes = ['image/jpeg','image/png'];
     if (file.type && !okTypes.includes(file.type)) {
       setStatus('कृपया JPEG या PNG फ़ाइल दें (HEIC समर्थित नहीं). कैमरा से selfie लें।', true);
       return;
     }
-    // If PNG, convert to JPEG for best compatibility
     file = await toJpegIfPng(file);
 
     setStatus('<span class="spinner"></span> खोज जारी…');
     try{
       const b64 = await fileToBase64(file);
-      const payload = { imageBase64: stripDataUrl(b64) };
+      const payload = { imageBase64: stripDataUrl(b64), name, phone: mobile };
       const res = await fetch(CFG.searchApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
       const json = await res.json(); if(!res.ok) throw new Error(json.message || json.error || res.statusText);
-      setStatus('Found '+(json.matches?.length||0)+' matches'); renderResults(json.matches||[]);
-    }catch(e){ setStatus('❌ '+e.message,true); }
-  };
-      const res = await fetch(CFG.searchApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-      const json = await res.json(); if(!res.ok) throw new Error(json.message || json.error || res.statusText);
-      setStatus('Found '+(json.matches?.length||0)+' matches'); renderResults(json.matches||[]);
+      renderResults(json.matches||[]);
+      setStatus('Found '+(json.matches?.length||0)+' matches');
     }catch(e){ setStatus('❌ '+e.message,true); }
   };
 
+  // ====== RESULTS RENDER ======
+  const selected = new Set();
+  function syncBulkBar(){ $('bulkBar').style.display = selected.size ? 'flex' : 'none'; }
+
   async function renderResults(arr){
-    const box=$('results'); box.innerHTML=''; $('nores').textContent='';
+    const box=$('results'); box.innerHTML=''; $('nores').textContent=''; selected.clear(); syncBulkBar();
     if(!arr.length){ $('nores').textContent='No matches yet'; return; }
     for(const m of arr){
       const card=document.createElement('div'); card.className='thumb';
       const img=document.createElement('img'); img.alt='Match photo'; card.appendChild(img);
-      const meta=document.createElement('div'); meta.className='meta';
-      meta.innerHTML = `<span class="chip">${m.similarity||0}% match</span>`+
-        `<div class="row" style="margin-top:6px"><button data-key="${m.s3Key||''}" class="secondary dl">Download</button></div>`;
-      card.appendChild(meta); box.appendChild(card);
-      if(m.s3Key){ try{ const url = await presign(m.s3Key); img.src=url; img.loading='lazy'; meta.querySelector('button.dl').onclick = ()=>directDownload(url); }catch{} }
+      const kebab=document.createElement('button'); kebab.className='kebab'; kebab.textContent='⋮'; card.appendChild(kebab);
+      const menu=document.createElement('div'); menu.className='menu';
+      menu.innerHTML = `<a href="#" class="act-dl">डाउनलोड</a><a href="#" class="act-toggle">${selected.has(m.s3Key)?'Deselect':'Select'}</a>`;
+      card.appendChild(menu);
+
+      const meta=document.createElement('div'); meta.className='meta'; box.appendChild(card); card.appendChild(meta);
+
+      // image presign
+      if(m.s3Key){ try{ const url = await presign(m.s3Key); img.src=url; img.loading='lazy';
+        menu.querySelector('.act-dl').onclick = async (e)=>{ e.preventDefault(); await directDownload(url); };
+      }catch{} }
+
+      kebab.onclick = ()=>{ menu.style.display = (menu.style.display==='block'?'none':'block'); };
+      menu.querySelector('.act-toggle').onclick = (e)=>{ e.preventDefault(); if(!m.s3Key) return; if(selected.has(m.s3Key)) selected.delete(m.s3Key); else selected.add(m.s3Key); menu.style.display='none'; syncBulkBar(); };
+      document.addEventListener('click', ev=>{ if(!card.contains(ev.target)) menu.style.display='none'; });
     }
   }
 
-  async function presign(key){
-    return fetch(CFG.downloadApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bucket: CFG.bucket, s3Key: key, forceDownload: true })})
-      .then(r=>r.json()).then(j=>{ if(!j.url) throw new Error(j.message||j.error||'no url'); return j.url; });
-  }
-
-  // ====== ADMIN PANEL ======
-  const q = new URL(location.href).searchParams; if(q.get('admin')==='1') $('dlgAdmin').showModal();
-  $('btnAdmin').onclick = ()=> $('dlgAdmin').showModal();
-  $('xClose').onclick = ()=> $('dlgAdmin').close();
-
-  $('adUpload').onclick = async ()=>{
-    const ev=$('adEvent').value.trim(); const files=[...$('adFiles').files];
-    if(!ev) return adStatus('Enter event id'); if(!files.length) return adStatus('Pick files');
-    adStatus('Preparing links…');
-    const resized = await Promise.all(files.map(f=>resizeIfNeeded(f, 3000, 0.90)));
-    let done=0; const total=resized.length; $('adList').innerHTML='';
-
-    // limit concurrency = 3
-    const pool=Array(3).fill(null).map(()=>worker()); await Promise.all(pool); adStatus(`✅ Uploaded ${done}/${total}`);
-
-    async function worker(){
-      while(resized.length){ const f = resized.shift(); await uploadOne(ev,f).catch(e=>addLine('❌ '+f.name+': '+e.message)); done++; addLine(`✔ ${f.name}`); adStatus(`Uploading… ${done}/${total}`); }
-    }
+  // ====== BULK DOWNLOAD ======
+  $('btnDlSel').onclick = async ()=>{
+    if(!selected.size){ alert('कोई फ़ोटो चुनी नहीं गई'); return; }
+    for(const k of selected){ try{ const url=await presign(k); await directDownload(url); }catch(e){ console.error('DL fail',k,e); } }
   };
 
-  $('adClear').onclick = ()=>{ $('adFiles').value=''; $('adEvent').value=''; $('adStatus').textContent=''; $('adList').textContent=''; };
-
-  async function uploadOne(eventId, file){
-    const pres = await (await fetch(CFG.uploadApi,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId,fileName:file.name,contentType:file.type})})).json();
-    if(!pres || !pres.url) throw new Error(pres.message || pres.error || 'presign failed');
-    const fd=new FormData(); Object.entries(pres.fields).forEach(([k,v])=>fd.append(k,v)); fd.append('file',file);
-    const up = await fetch(pres.url,{method:'POST',body:fd}); if(!up.ok) throw new Error('S3 upload failed '+up.status);
-  }
-
-  function addLine(s){ const p=document.createElement('div'); p.textContent=s; $('adList').appendChild(p); }
-
-  // Bulk download selected — sequential fallback
-  document.getElementById('btnDlSel').onclick = async ()=>{
-    const picks=[...document.querySelectorAll('input.pick:checked')].map(x=>x.dataset.key).filter(Boolean);
-    if(!picks.length) { alert('कोई फ़ोटो चुनी नहीं गई'); return; }
-    for(const k of picks){ try{ const url=await presign(k); await directDownload(url); }catch(e){ console.error('DL fail',k,e); } }
-  };
-
-  async function directDownload(url){
-    const a=document.createElement('a'); a.href=url; a.download=''; document.body.appendChild(a); a.click(); a.remove();
-  }
-
-  // ====== helpers ======
+  // ====== HELPERS ======
   function setStatus(msg,isErr){ const el=$('status'); el.innerHTML=msg; el.className='tiny '+(isErr?'err':'muted'); }
-  function adStatus(msg){ $('adStatus').innerHTML=msg; }
   function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
   function stripDataUrl(s){ const i=s.indexOf(','); return i>=0?s.slice(i+1):s; }
-
-  // Convert PNG → JPEG on the client (HEIC not supported; camera already gives JPEG)
-  async function toJpegIfPng(file){
-    try{
-      if(file && file.type === 'image/png'){
-        const url = URL.createObjectURL(file); const img = new Image(); img.src=url; await img.decode();
-        const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
-        c.getContext('2d').drawImage(img,0,0); URL.revokeObjectURL(url);
-        const blob = await new Promise(r=>c.toBlob(r,'image/jpeg',0.92));
-        return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
-      }
-    }catch{ /* fall back to original file */ }
-    return file;
-  }
-
-  async function resizeIfNeeded(file, maxSide=3000, quality=0.90){
-    const imgUrl = URL.createObjectURL(file); const img = new Image(); img.src = imgUrl; await img.decode();
-    let {width:w,height:h} = img; if(Math.max(w,h) <= maxSide) { URL.revokeObjectURL(imgUrl); return file; }
-    const scale = maxSide/Math.max(w,h); w=Math.round(w*scale); h=Math.round(h*scale);
-    const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-    URL.revokeObjectURL(imgUrl);
-    const blob = await new Promise(r=>c.toBlob(r,'image/jpeg',quality));
-    return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
-  }
+  async function toJpegIfPng(file){ try{ if(file && file.type==='image/png'){ const url=URL.createObjectURL(file); const img=new Image(); img.src=url; await img.decode(); const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0); URL.revokeObjectURL(url); const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.92)); return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});} }catch{} return file; }
+  function presign(key){ return fetch(CFG.downloadApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bucket: CFG.bucket, s3Key: key, forceDownload: true })}).then(r=>r.json()).then(j=>{ if(!j.url) throw new Error(j.message||j.error||'no url'); return j.url; }); }
+  async function directDownload(url){ const a=document.createElement('a'); a.href=url; a.download=''; document.body.appendChild(a); a.click(); a.remove(); }
 })();
 </script>
 </body>
 </html>
-
