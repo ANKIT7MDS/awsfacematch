@@ -1,144 +1,144 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WedMatch Search</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #fff7f0; margin: 0; padding: 0; color: #333; }
-  header { background: #ff8a00; padding: 12px; color: white; text-align: center; font-size: 20px; }
-  .container { padding: 14px; }
-  h2 { color: #ff8a00; }
-  input, select, textarea { width: 100%; padding: 8px; margin-top: 4px; margin-bottom: 12px; box-sizing: border-box; color: #000; background-color: #fff; border: 1px solid #ccc; border-radius: 6px; }
-  input::placeholder { color: #777; }
-  button { padding: 8px 14px; background: #ff8a00; color: white; border: none; border-radius: 6px; cursor: pointer; }
-  button.secondary { background: #ccc; color: #333; }
-  button:disabled { opacity: 0.6; cursor: not-allowed; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-  .thumb { position: relative; background: #fff; border: 2px solid #f7c27c; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: transform .1s, border-color .1s; }
-  .thumb.selected { border-color: #ff8a00; }
-  .thumb::after { content: ""; position: absolute; right: 8px; top: 8px; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2px solid #ffd7aa; display: none; align-items: center; justify-content: center; font-weight: 800; color: #0a0; }
-  .thumb.selected::after { display: flex; content: "✓"; }
-  .thumb img { width: 100%; height: 170px; object-fit: cover; background: #f8f0e6; cursor: pointer; }
-  .thumb img:active { transform: scale(.98); }
-  .meta { padding: 10px; border-top: 1px solid #f7c27c; font-size: 12px; color: #555; }
-  #bulkBar { display: none; gap: 8px; margin-bottom: 8px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>भारतीय जनता पार्टी मंदसौर - फोटो सर्च</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fff8f0;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: orange;
+      padding: 12px;
+      color: white;
+      font-size: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      background-color: orange;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #ff9800;
+    }
+    .camera-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    video {
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      max-width: 100%;
+      margin-bottom: 10px;
+    }
+    .results {
+      margin-top: 20px;
+    }
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .photo-grid img {
+      width: 100%;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-<header>भारतीय जनता पार्टी मंदसौर</header>
-<div class="container">
-  <h2>Search</h2>
-  <input type="text" id="name" placeholder="नाम">
-  <input type="text" id="phone" placeholder="मोबाइल नंबर">
-  <div>
-    <video id="video" autoplay playsinline style="max-width:100%; max-height:300px; background:#000"></video>
-    <button id="captureBtn">फोटो कैप्चर</button>
-    <canvas id="canvas" style="display:none"></canvas>
-  </div>
-  <button id="searchBtn">Search</button>
+  <header>भारतीय जनता पार्टी — मंदसौर</header>
+  <div class="container">
+    <div class="form-group">
+      <input type="text" id="name" placeholder="नाम" />
+    </div>
+    <div class="form-group">
+      <input type="text" id="mobile" placeholder="मोबाइल नंबर" />
+    </div>
+    <div class="camera-container">
+      <video id="camera" autoplay playsinline></video>
+      <button id="capture">फोटो कैप्चर</button>
+    </div>
+    <div class="form-group">
+      <input type="file" id="fileInput" />
+    </div>
+    <button id="search">Search</button>
 
-  <div style="margin-top:14px">
-    <button id="toggleSel" class="secondary">Multiple select: OFF</button>
-    <span id="selCount" style="margin-left:8px; font-size:12px; color:#555"></span>
-    <div id="bulkBar">
-      <button id="downloadSel" class="secondary">चुनी हुई फ़ोटो डाउनलोड</button>
-      <button id="clearSel" class="secondary">Clear</button>
+    <div class="results">
+      <h3>Results</h3>
+      <div class="photo-grid" id="resultsGrid"></div>
     </div>
   </div>
 
-  <div id="results" class="grid"></div>
-</div>
-<script>
-const API_URL = "<your-search-api-url>";
-const DOWNLOAD_API = "<your-download-api-url>";
-let selectionMode = false;
-const selected = new Set();
+  <script>
+    const uploadUrl = "https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2/upload-url";
+    const searchUrl = "https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2/search";
 
-function syncBulkBar(){
-  document.getElementById('bulkBar').style.display = selected.size ? 'flex' : 'none';
-  document.getElementById('selCount').textContent = selected.size ? `${selected.size} चुनी हुई` : '';
-  document.getElementById('toggleSel').textContent = `Multiple select: ${selectionMode ? 'ON' : 'OFF'}`;
-}
+    document.getElementById("capture").addEventListener("click", async () => {
+      const video = document.getElementById("camera");
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+        document.getElementById("fileInput").files = new DataTransfer().files;
+      });
+    });
 
-document.getElementById('toggleSel').onclick = () => {
-  selectionMode = !selectionMode;
-  if(!selectionMode){ selected.clear(); document.querySelectorAll('.thumb').forEach(el=>el.classList.remove('selected')); }
-  syncBulkBar();
-};
+    // Camera start
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      document.getElementById("camera").srcObject = stream;
+    });
 
-document.getElementById('clearSel').onclick = () => {
-  selected.clear();
-  document.querySelectorAll('.thumb').forEach(el=>el.classList.remove('selected'));
-  syncBulkBar();
-};
+    document.getElementById("search").addEventListener("click", async () => {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("कृपया फोटो चुनें या कैप्चर करें");
 
-async function presign(key){
-  const r = await fetch(DOWNLOAD_API, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ s3Key: key }) });
-  const j = await r.json();
-  return j.url;
-}
+      const res = await fetch(searchUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}) // यहाँ सर्च पैरामीटर्स डालें
+      });
 
-async function directDownload(url){
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = '';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+      const data = await res.json();
+      const resultsGrid = document.getElementById("resultsGrid");
+      resultsGrid.innerHTML = "";
 
-document.getElementById('downloadSel').onclick = async () => {
-  for(const key of selected){
-    const url = await presign(key);
-    await directDownload(url);
-  }
-};
-
-function renderResults(matches){
-  const results = document.getElementById('results');
-  results.innerHTML = '';
-  matches.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'thumb';
-    const img = document.createElement('img');
-    img.src = `https://<your-bucket-name>.s3.ap-south-1.amazonaws.com/${m.s3Key}`;
-    div.appendChild(img);
-    div.onclick = async () => {
-      if(selectionMode){
-        if(selected.has(m.s3Key)){ selected.delete(m.s3Key); div.classList.remove('selected'); }
-        else { selected.add(m.s3Key); div.classList.add('selected'); }
-        syncBulkBar();
-      } else {
-        const url = await presign(m.s3Key);
-        await directDownload(url);
-      }
-    };
-    results.appendChild(div);
-  });
-}
-
-document.getElementById('searchBtn').onclick = async () => {
-  const canvas = document.getElementById('canvas');
-  const imageBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
-  const body = { imageBase64 };
-  const r = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  const j = await r.json();
-  renderResults(j.matches || []);
-};
-
-const video = document.getElementById('video');
-const captureBtn = document.getElementById('captureBtn');
-captureBtn.onclick = () => {
-  const canvas = document.getElementById('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-};
-
-navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-  video.srcObject = stream;
-});
-</script>
+      data.results.forEach(photo => {
+        const img = document.createElement("img");
+        img.src = photo.url;
+        img.addEventListener("click", () => {
+          window.open(photo.url, "_blank");
+        });
+        resultsGrid.appendChild(img);
+      });
+    });
+  </script>
 </body>
 </html>
