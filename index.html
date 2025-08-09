@@ -1,71 +1,81 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WedMatch — Find My Photos</title>
+  <title>भारतीय जनता पार्टी — मंदसौर | WedMatch</title>
   <style>
-    :root { --bg:#0b1020; --card:#141a2f; --muted:#90a0c0; --text:#eaf0ff; --accent:#6aa1ff; --ok:#7ef293; --err:#ff8a8a }
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    header{padding:20px 16px;border-bottom:1px solid #1a2242;background:#0f1528;position:sticky;top:0}
-    header h1{margin:0;font-size:20px}
-    .container{max-width:880px;margin:18px auto;padding:0 16px}
-    .card{background:var(--card);border:1px solid #202a4a;border-radius:14px;padding:16px;box-shadow:0 1px 0 #000}
-    h2{margin:0 0 8px;font-size:18px}
-    label{display:block;margin:10px 0 6px;color:var(--muted)}
-    input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #2a355e;background:#0f1528;color:var(--text)}
+    :root{
+      --bg:#0b0e14; --card:#121722; --muted:#9fb0c7; --text:#f7fbff; --line:#1f2a44;
+      --accent:#ff7a00; --accent2:#ffb347; --btn:#ff7a00; --btn2:#ff9b2f; --ok:#79f2a5; --err:#ff8a8a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b0e14,#0d1321);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    header{padding:18px 14px;background:linear-gradient(90deg,#1a2140,#141a33);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+    header .wrap{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:12px}
+    header h1{margin:0;font-size:18px;letter-spacing:.3px}
+    header .badge{margin-left:auto;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#261400;border-radius:999px;padding:6px 10px;font-weight:600}
+    .container{max-width:980px;margin:16px auto;padding:0 14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 1px 0 #0006}
+    h2{margin:0 0 10px;font-size:18px}
+    label{display:block;margin:.6rem 0 .35rem;color:var(--muted)}
+    input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #273458;background:#0e1426;color:var(--text)}
     input[type=file]{padding:8px}
-    button{cursor:pointer;background:linear-gradient(180deg,#3b67ff,#3155d8);border:0}
-    button.secondary{background:#1b2342}
+    button{cursor:pointer;background:linear-gradient(180deg,var(--btn),var(--btn2));border:0;color:#2a1200;font-weight:700}
+    button.secondary{background:#182141;color:#cfe}
     .row{display:flex;gap:10px}
     .row>*{flex:1}
-    .muted{color:var(--muted)}
-    .tiny{font-size:12px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px}
-    .thumb{background:#0f1528;border:1px solid #263159;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
-    .thumb img{width:100%;height:180px;object-fit:cover;background:#0d1226}
-    .thumb .meta{padding:10px;border-top:1px solid #263159}
-    .pill{position:fixed;right:12px;bottom:12px;background:#1c2a5a;border:1px solid #2a3d7e;border-radius:999px;padding:10px 14px;font-size:12px;cursor:pointer}
+    .muted{color:var(--muted)} .tiny{font-size:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+    .thumb{background:#0f1429;border:1px solid #243158;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .thumb img{width:100%;height:170px;object-fit:cover;background:#0d1326}
+    .thumb .meta{padding:10px;border-top:1px solid #243158}
+    .chip{display:inline-block;background:#1a2448;border:1px solid #2a3c73;color:#cfe;padding:2px 8px;border-radius:999px;font-size:11px}
+    .pill{position:fixed;right:12px;bottom:12px;background:linear-gradient(180deg,var(--btn),var(--btn2));border:none;color:#2a1200;border-radius:999px;padding:10px 14px;font-weight:700;cursor:pointer}
     .ok{color:var(--ok)} .err{color:var(--err)}
-    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #2a355e;border-top-color:#6aa1ff;border-radius:50%;animation:spin .9s linear infinite;vertical-align:-3px}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #2a355e;border-top-color:#ffb347;border-radius:50%;animation:spin .9s linear infinite;vertical-align:-3px}
     @keyframes spin{to{transform:rotate(360deg)}}
-    dialog{border:1px solid #263159;border-radius:14px;background:var(--card);color:var(--text);width:min(560px,96%)}
-    dialog::backdrop{background:rgba(0,0,0,.6)}
+    dialog{border:1px solid #243158;border-radius:16px;background:var(--card);color:var(--text);width:min(720px,96%)}
+    dialog::backdrop{background:rgba(0,0,0,.55)}
     .closeX{position:absolute;right:10px;top:8px;background:#1b2342;border:1px solid #2a355e;border-radius:10px;padding:6px 10px;cursor:pointer}
+    progress{width:100%;height:10px;border-radius:10px;overflow:hidden}
   </style>
 </head>
 <body>
-  <header><h1>Find My Photos</h1></header>
-  <div class="container">
+  <header>
+    <div class="wrap">
+      <h1>भारतीय जनता पार्टी — मंदसौर</h1>
+      <span class="badge">WedMatch</span>
+    </div>
+  </header>
 
-    <!-- END-USER SECTION -->
+  <div class="container">
+    <!-- END-USER: Selfie Search only -->
     <div class="card">
-      <h2>Search with your selfie</h2>
+      <h2>अपनी फोटो ढूँढें (Selfie Search)</h2>
       <div class="row">
         <div>
-          <label>Your Name</label>
-          <input id="name" placeholder="e.g., Priya Sharma" />
+          <label>नाम</label>
+          <input id="name" placeholder="जैसे: अंकित सोनी"/>
         </div>
         <div>
-          <label>Mobile number</label>
-          <input id="mobile" placeholder="e.g., 98xxxxxx10" inputmode="numeric" />
+          <label>मोबाइल नंबर</label>
+          <input id="mobile" placeholder="98xxxxxx10" inputmode="numeric"/>
         </div>
       </div>
 
-      <label>Take a selfie (recommended)</label>
+      <label>सेल्फी लें या फ़ाइल चुनें</label>
       <div class="row">
-        <button id="btnOpenCam">Open camera</button>
-        <input id="fileSelfie" type="file" accept="image/*" />
+        <button id="btnOpenCam">कैमरा खोलें</button>
+        <input id="fileSelfie" type="file" accept="image/*"/>
         <button id="btnSearch">Search</button>
       </div>
-      <div class="tiny muted" style="margin-top:6px">Tip: बेहतर मैच के लिए साफ़ फ्रंट कैमरा फोटो लें।</div>
 
-      <!-- Camera area -->
       <div id="camBox" style="display:none;margin-top:10px" class="row">
-        <video id="video" playsinline style="width:100%;border-radius:12px;border:1px solid #263159"></video>
-        <div style="max-width:200px">
-          <button id="btnCapture" style="margin-bottom:8px">Capture</button>
-          <button id="btnCloseCam" class="secondary">Close camera</button>
+        <video id="video" playsinline style="width:100%;border-radius:12px;border:1px solid #243158"></video>
+        <div style="max-width:220px">
+          <button id="btnCapture" style="margin-bottom:8px">कैप्चर</button>
+          <button id="btnCloseCam" class="secondary">कैमरा बंद</button>
         </div>
       </div>
 
@@ -82,44 +92,35 @@
     <button class="pill" id="btnAdmin">Admin</button>
   </div>
 
-  <!-- ADMIN DIALOG (for you) -->
+  <!-- ADMIN DIALOG (hidden from public use) -->
   <dialog id="dlgAdmin">
     <button class="closeX" id="xClose">Close</button>
     <div style="padding:16px">
       <h2>Admin — Upload to an Event</h2>
-      <div class="tiny muted" style="margin:4px 0 10px">यह सेक्शन end-users के लिए नहीं है.</div>
+      <div class="tiny muted" style="margin:4px 0 10px">यह सेक्शन end‑users के लिए नहीं है.</div>
+
       <div class="row">
         <div>
           <label>Event ID</label>
-          <input id="adEvent" placeholder="event-2025-08" />
+          <input id="adEvent" placeholder="event-2025-08"/>
         </div>
         <div>
-          <label>Choose Photo</label>
-          <input id="adFile" type="file" accept="image/*" />
+          <label>Choose Photos (multiple)</label>
+          <input id="adFiles" type="file" accept="image/*" multiple />
         </div>
       </div>
       <div class="row" style="margin-top:8px">
-        <button id="adUpload">Generate Link & Upload</button>
+        <button id="adUpload">Generate Links & Upload</button>
         <button id="adClear" class="secondary">Clear</button>
       </div>
+      <div class="tiny muted" style="margin-top:6px">बड़ी इमेज अपने‑आप 3000px तक resize होंगी (JPEG, ~0.9 quality).</div>
       <div id="adStatus" class="tiny muted" style="margin-top:8px"></div>
-      <div id="adLastKey" class="tiny" style="margin-top:6px"></div>
+      <div id="adList" class="tiny" style="margin-top:6px"></div>
 
       <div class="card" style="margin-top:14px">
-        <h2>Settings</h2>
-        <label>API: /upload-url</label>
-        <input id="cfgUpload" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2/upload-url" />
-        <label style="margin-top:10px">API: /search</label>
-        <input id="cfgSearch" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2/search" />
-        <label style="margin-top:10px">API: /download</label>
-        <input id="cfgDownload" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2/download" />
-        <label style="margin-top:10px">S3 Bucket</label>
-        <input id="cfgBucket" placeholder="wedmatch-photos" />
-        <div class="row" style="margin-top:10px">
-          <button id="btnSaveCfg">Save</button>
-          <button id="btnFillDemo" class="secondary">Fill demo</button>
-        </div>
-        <div class="tiny muted" style="margin-top:6px">Settings localStorage में सेव होती हैं.</div>
+        <h2>Settings (fixed)</h2>
+        <div class="tiny muted">URLs हार्डकोडेड हैं—public build में यूज़र को दिखते नहीं।</div>
+        <code id="cfgShow"></code>
       </div>
     </div>
   </dialog>
@@ -127,89 +128,50 @@
 <script>
 (function(){
   const $ = id => document.getElementById(id);
-  // ====== CONFIG (stored for admin only) ======
-  const state = {
-    uploadApi: localStorage.getItem('wm.uploadApi') || '',
-    searchApi: localStorage.getItem('wm.searchApi') || '',
-    downloadApi: localStorage.getItem('wm.downloadApi') || '',
-    bucket: localStorage.getItem('wm.bucket') || 'wedmatch-photos'
-  };
-  const q = new URL(location.href).searchParams;
-  if(q.get('admin')==='1') $('dlgAdmin').showModal();
 
-  // Fill admin inputs
-  function renderCfg(){
-    $('cfgUpload').value = state.uploadApi;
-    $('cfgSearch').value = state.searchApi;
-    $('cfgDownload').value = state.downloadApi;
-    $('cfgBucket').value = state.bucket;
-  }
-  renderCfg();
-
-  $('btnSaveCfg').onclick = ()=>{
-    state.uploadApi = $('cfgUpload').value.trim();
-    state.searchApi = $('cfgSearch').value.trim();
-    state.downloadApi = $('cfgDownload').value.trim();
-    state.bucket = $('cfgBucket').value.trim();
-    localStorage.setItem('wm.uploadApi', state.uploadApi);
-    localStorage.setItem('wm.searchApi', state.searchApi);
-    localStorage.setItem('wm.downloadApi', state.downloadApi);
-    localStorage.setItem('wm.bucket', state.bucket);
-    toast('Saved settings', true);
+  // ====== HARD-CODED CONFIG (Prod) ======
+  const BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
+  const CFG = {
+    uploadApi: BASE + '/upload-url',
+    searchApi: BASE + '/search',
+    downloadApi: BASE + '/download',
+    bucket: 'wedmatch-photos'
   };
-  $('btnFillDemo').onclick = ()=>{
-    alert('Fill your real API URLs then Save');
-  };
-
-  $('btnAdmin').onclick = ()=> $('dlgAdmin').showModal();
-  $('xClose').onclick = ()=> $('dlgAdmin').close();
+  $('cfgShow').textContent = JSON.stringify(CFG, null, 2);
 
   // ====== CAMERA ======
   let stream = null, capturedFile = null;
   $('btnOpenCam').onclick = async ()=>{
-    try{
-      stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
-      $('camBox').style.display='flex';
-      $('video').srcObject = stream; $('video').play();
-    }catch(e){ setStatus('❌ Camera not available: '+e.message,true); }
+    try{ stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
+      $('camBox').style.display='flex'; $('video').srcObject = stream; $('video').play();
+    }catch(e){ setStatus('❌ कैमरा नहीं खुला: '+e.message,true); }
   };
-  $('btnCloseCam').onclick = ()=>{ stopCam(); };
+  $('btnCloseCam').onclick = ()=> stopCam();
   function stopCam(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } $('camBox').style.display='none'; }
-
   $('btnCapture').onclick = async ()=>{
     try{
-      const v = $('video'); const c = document.createElement('canvas');
-      c.width = v.videoWidth; c.height = v.videoHeight; const ctx = c.getContext('2d');
-      ctx.drawImage(v,0,0); const blob = await new Promise(r=>c.toBlob(r,'image/jpeg',0.92));
-      capturedFile = new File([blob], 'selfie.jpg', {type:'image/jpeg'});
-      stopCam(); setStatus('✅ Selfie captured. Ready to search.');
+      const v=$('video'); const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+      const ctx=c.getContext('2d'); ctx.drawImage(v,0,0); const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.92));
+      capturedFile = new File([blob], 'selfie.jpg', {type:'image/jpeg'}); stopCam(); setStatus('✅ Selfie तैयार है.');
     }catch(e){ setStatus('❌ Capture failed: '+e.message,true); }
   };
 
   // ====== END-USER SEARCH ======
   $('btnSearch').onclick = async ()=>{
-    const name = $('name').value.trim();
-    const mobile = $('mobile').value.trim();
+    const name = $('name').value.trim(); const mobile = $('mobile').value.trim();
     const file = capturedFile || $('fileSelfie').files[0];
+    if(!name || !mobile) return setStatus('कृपया नाम और मोबाइल भरें', true);
+    if(!file) return setStatus('सेल्फी लें या फ़ाइल चुनें', true);
 
-    if(!state.searchApi) return setStatus('Set /search API in Admin settings', true);
-    if(!name || !mobile) return setStatus('Please enter name and mobile', true);
-    if(!file) return setStatus('Please take a selfie or choose a file', true);
-
-    setStatus('<span class="spinner"></span> Searching…');
+    setStatus('<span class="spinner"></span> खोज जारी…');
     try{
       const b64 = await fileToBase64(file);
       const payload = { imageBase64: stripDataUrl(b64) };
-      const res = await fetch(state.searchApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-      const json = await res.json();
-      if(!res.ok) throw new Error(json.message || json.error || res.statusText);
-      setStatus('Found '+(json.matches?.length||0)+' matches');
-      renderResults(json.matches||[]);
+      const res = await fetch(CFG.searchApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      const json = await res.json(); if(!res.ok) throw new Error(json.message || json.error || res.statusText);
+      setStatus('Found '+(json.matches?.length||0)+' matches'); renderResults(json.matches||[]);
     }catch(e){ setStatus('❌ '+e.message,true); }
   };
-
-  function setStatus(msg, isErr){ const el=$('status'); el.innerHTML=msg; el.className='tiny '+(isErr?'err':'muted'); }
-  function adStatus(msg){ $('adStatus').innerHTML=msg; }
 
   async function renderResults(arr){
     const box=$('results'); box.innerHTML=''; $('nores').textContent='';
@@ -218,49 +180,64 @@
       const card=document.createElement('div'); card.className='thumb';
       const img=document.createElement('img'); img.alt='Match photo'; card.appendChild(img);
       const meta=document.createElement('div'); meta.className='meta';
-      meta.innerHTML = `<div class="tiny muted">Similarity</div><div><b>${m.similarity||0}%</b></div>`+
+      meta.innerHTML = `<span class="chip">${m.similarity||0}% match</span>`+
         `<div class="row" style="margin-top:6px"><button data-key="${m.s3Key||''}" class="secondary dl">Download</button></div>`;
       card.appendChild(meta); box.appendChild(card);
-      // fetch presigned URL for image to show thumbnail
-      if(m.s3Key){
-        try{
-          const url = await presign(m.s3Key); img.src=url; img.loading='lazy';
-          meta.querySelector('button.dl').onclick = ()=>{ window.open(url,'_blank'); };
-        }catch{ img.alt='Preview unavailable'; }
-      } else {
-        img.alt='No image key';
-      }
+      if(m.s3Key){ try{ const url = await presign(m.s3Key); img.src=url; img.loading='lazy'; meta.querySelector('button.dl').onclick = ()=>window.open(url,'_blank'); }catch{} }
     }
   }
 
   async function presign(key){
-    if(!state.downloadApi) throw new Error('Set /download API in Admin settings');
-    const res = await fetch(state.downloadApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bucket: state.bucket, s3Key: key })});
+    const res = await fetch(CFG.downloadApi,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bucket: CFG.bucket, s3Key: key })});
     const j = await res.json(); if(!res.ok) throw new Error(j.message || j.error || res.statusText); return j.url;
   }
 
-  // ====== ADMIN UPLOAD ======
-  $('adUpload').onclick = async ()=>{
-    const ev=$('adEvent').value.trim(); const f=$('adFile').files[0];
-    if(!state.uploadApi) return adStatus('Set /upload-url in Settings');
-    if(!ev) return adStatus('Enter event id');
-    if(!f) return adStatus('Pick a file');
-    adStatus('<span class="spinner"></span> Preparing link…');
-    try{
-      const pres = await (await fetch(state.uploadApi,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:ev,fileName:f.name,contentType:f.type})})).json();
-      if(!pres || !pres.url) throw new Error(pres.message || pres.error || 'presign failed');
-      adStatus('<span class="spinner"></span> Uploading…');
-      const fd=new FormData(); Object.entries(pres.fields).forEach(([k,v])=>fd.append(k,v)); fd.append('file',f);
-      const up = await fetch(pres.url,{method:'POST',body:fd}); if(!up.ok) throw new Error('S3 upload failed '+up.status);
-      $('adLastKey').innerHTML='S3 Key: <code>'+pres.key+'</code>';
-      adStatus('✅ Uploaded');
-    }catch(e){ adStatus('❌ '+e.message); }
-  };
-  $('adClear').onclick = ()=>{ $('adFile').value=''; $('adEvent').value=''; $('adStatus').textContent=''; $('adLastKey').textContent=''; };
+  // ====== ADMIN PANEL ======
+  const q = new URL(location.href).searchParams; if(q.get('admin')==='1') $('dlgAdmin').showModal();
+  $('btnAdmin').onclick = ()=> $('dlgAdmin').showModal();
+  $('xClose').onclick = ()=> $('dlgAdmin').close();
 
-  function toast(msg,ok){ $('adStatus').innerHTML = (ok?'<span class="ok">':'')+msg+(ok?'</span>':''); }
+  $('adUpload').onclick = async ()=>{
+    const ev=$('adEvent').value.trim(); const files=[...$('adFiles').files];
+    if(!ev) return adStatus('Enter event id'); if(!files.length) return adStatus('Pick files');
+    adStatus('Preparing links…');
+    const resized = await Promise.all(files.map(f=>resizeIfNeeded(f, 3000, 0.90)));
+    let done=0; const total=resized.length; $('adList').innerHTML='';
+
+    // limit concurrency = 3
+    const pool=Array(3).fill(null).map(()=>worker()); await Promise.all(pool); adStatus(`✅ Uploaded ${done}/${total}`);
+
+    async function worker(){
+      while(resized.length){ const f = resized.shift(); await uploadOne(ev,f).catch(e=>addLine('❌ '+f.name+': '+e.message)); done++; addLine(`✔ ${f.name}`); adStatus(`Uploading… ${done}/${total}`); }
+    }
+  };
+
+  $('adClear').onclick = ()=>{ $('adFiles').value=''; $('adEvent').value=''; $('adStatus').textContent=''; $('adList').textContent=''; };
+
+  async function uploadOne(eventId, file){
+    const pres = await (await fetch(CFG.uploadApi,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId,fileName:file.name,contentType:file.type})})).json();
+    if(!pres || !pres.url) throw new Error(pres.message || pres.error || 'presign failed');
+    const fd=new FormData(); Object.entries(pres.fields).forEach(([k,v])=>fd.append(k,v)); fd.append('file',file);
+    const up = await fetch(pres.url,{method:'POST',body:fd}); if(!up.ok) throw new Error('S3 upload failed '+up.status);
+  }
+
+  function addLine(s){ const p=document.createElement('div'); p.textContent=s; $('adList').appendChild(p); }
+
+  // ====== helpers ======
+  function setStatus(msg,isErr){ const el=$('status'); el.innerHTML=msg; el.className='tiny '+(isErr?'err':'muted'); }
+  function adStatus(msg){ $('adStatus').innerHTML=msg; }
   function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
   function stripDataUrl(s){ const i=s.indexOf(','); return i>=0?s.slice(i+1):s; }
+
+  async function resizeIfNeeded(file, maxSide=3000, quality=0.90){
+    const imgUrl = URL.createObjectURL(file); const img = new Image(); img.src = imgUrl; await img.decode();
+    let {width:w,height:h} = img; if(Math.max(w,h) <= maxSide) { URL.revokeObjectURL(imgUrl); return file; }
+    const scale = maxSide/Math.max(w,h); w=Math.round(w*scale); h=Math.round(h*scale);
+    const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(imgUrl);
+    const blob = await new Promise(r=>c.toBlob(r,'image/jpeg',quality));
+    return new File([blob], file.name.replace(/\.[^.]+$/i,'.jpg'), {type:'image/jpeg'});
+  }
 })();
 </script>
 </body>
