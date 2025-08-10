@@ -1,23 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WedMatch — Admin Panel</title>
   <style>
-    body { font-family: Arial, sans-serif; }
+    body { font-family: Arial, sans-serif; background: #fffaf5; margin: 0; }
+    header { background: orange; padding: 10px; font-size: 1.2em; font-weight: bold; }
+    section { max-width: 900px; margin: auto; padding: 20px; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    select, input, button { padding: 6px; margin-top: 4px; }
+    button { background: orange; border: none; cursor: pointer; }
+    .drop-area { border: 2px dashed #ccc; padding: 20px; margin-top: 10px; background: #fff4e6; text-align: center; }
     .log-table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     .log-table th, .log-table td { border: 1px solid #ccc; padding: 8px; }
     .log-table th { background: #f2f2f2; }
+    .progress-bar { height: 6px; background: orange; margin-top: 5px; }
   </style>
 </head>
 <body>
-  <h1>Admin Panel</h1>
+<header>WedMatch — Admin Panel</header>
+<section>
 
-  <label for="apiBaseInput">API Base URL:</label>
-  <input id="apiBaseInput" type="text" placeholder="https://api.example.com" />
-  <button id="saveApiBtn">Save</button>
-  <button id="loadLogsBtn">Load Logs</button>
+  <!-- API Base URL Setting -->
+  <label for="apiBaseInput">API Base URL</label>
+  <input id="apiBaseInput" type="text" placeholder="https://your-api-url" style="width:100%" />
+  <button id="saveApiBtn">Save API URL</button>
+
+  <!-- Event Selection -->
+  <label>इवेंट चुनें</label>
+  <select id="eventSelect"></select>
+
+  <!-- S3 Bucket Selection -->
+  <label>S3 Bucket</label>
+  <select id="bucketSelect">
+    <option value="wedmatch-photos">wedmatch-photos</option>
+  </select>
+
+  <!-- Upload Photos -->
+  <h3>Upload Photos</h3>
+  <div id="dropArea" class="drop-area">इमेज यहाँ ड्रॉप करें या <input type="file" id="fileInput" multiple /></div>
+  <label>Max dimension (px)</label>
+  <input type="number" id="maxDim" value="3000" />
+  <label>JPEG quality</label>
+  <input type="number" step="0.01" id="jpegQuality" value="0.88" />
+  <div class="progress-bar" id="uploadProgress"></div>
+
+  <!-- Search Logs -->
+  <h3>Search Logs</h3>
+  <label>From (epoch ms)</label>
+  <input type="number" id="logsFrom" placeholder="(optional)" />
+  <button id="loadLogsBtn">लोड करें</button>
 
   <table class="log-table" id="logsTable">
     <thead>
@@ -32,69 +65,111 @@
     <tbody></tbody>
   </table>
 
-  <script>
-    // Safe JSON parse
-    function safeJson(str) {
-      try { return JSON.parse(str); }
-      catch { console.warn("Invalid JSON:", str); return null; }
+</section>
+
+<script>
+  function safeJson(str) {
+    try { return JSON.parse(str); }
+    catch { console.warn("Invalid JSON:", str); return null; }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const apiBaseInput = document.getElementById("apiBaseInput");
+    const saveApiBtn = document.getElementById("saveApiBtn");
+    const loadLogsBtn = document.getElementById("loadLogsBtn");
+    const logsTableBody = document.querySelector("#logsTable tbody");
+    const dropArea = document.getElementById("dropArea");
+    const fileInput = document.getElementById("fileInput");
+    const uploadProgress = document.getElementById("uploadProgress");
+    const eventSelect = document.getElementById("eventSelect");
+    const bucketSelect = document.getElementById("bucketSelect");
+
+    // Restore API Base
+    const savedBase = localStorage.getItem("apiBase");
+    if (apiBaseInput && savedBase) apiBaseInput.value = savedBase;
+
+    saveApiBtn?.addEventListener("click", () => {
+      localStorage.setItem("apiBase", apiBaseInput.value);
+      alert("API Base URL saved!");
+    });
+
+    // Load Events
+    async function loadEvents() {
+      try {
+        const res = await fetch(`${apiBaseInput.value}/admin/events`);
+        const data = safeJson(await res.text());
+        if (Array.isArray(data)) {
+          eventSelect.innerHTML = data.map(ev => `<option value="${ev}">${ev}</option>`).join("");
+        }
+      } catch (err) { console.error("Load events error", err); }
+    }
+    loadEvents();
+
+    // Upload handler
+    async function uploadFiles(files) {
+      for (let file of files) {
+        try {
+          // Get presigned URL
+          const res = await fetch(`${apiBaseInput.value}/upload-url`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: eventSelect.value,
+              bucket: bucketSelect.value,
+              filename: file.name
+            })
+          });
+          const uploadData = safeJson(await res.text());
+          if (!uploadData?.uploadUrl) throw new Error("Upload URL missing");
+
+          // Upload file to S3
+          await fetch(uploadData.uploadUrl, { method: "PUT", body: file });
+          console.log("Uploaded:", file.name);
+        } catch (err) {
+          console.error("Upload error:", err);
+        }
+      }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const apiBaseInput = document.getElementById("apiBaseInput");
-      const saveApiBtn = document.getElementById("saveApiBtn");
-      const loadLogsBtn = document.getElementById("loadLogsBtn");
-      const logsTableBody = document.querySelector("#logsTable tbody");
+    fileInput?.addEventListener("change", e => uploadFiles(e.target.files));
 
-      // Restore API Base
-      const savedBase = localStorage.getItem("apiBase");
-      if (apiBaseInput && savedBase) apiBaseInput.value = savedBase;
+    dropArea?.addEventListener("dragover", e => { e.preventDefault(); dropArea.style.background = "#ffe0b3"; });
+    dropArea?.addEventListener("dragleave", e => { e.preventDefault(); dropArea.style.background = "#fff4e6"; });
+    dropArea?.addEventListener("drop", e => {
+      e.preventDefault();
+      dropArea.style.background = "#fff4e6";
+      uploadFiles(e.dataTransfer.files);
+    });
 
-      // Save API Base
-      if (saveApiBtn) {
-        saveApiBtn.addEventListener("click", () => {
-          localStorage.setItem("apiBase", apiBaseInput.value);
-          alert("API Base URL saved!");
+    // Load Logs
+    loadLogsBtn?.addEventListener("click", async () => {
+      try {
+        const from = document.getElementById("logsFrom").value;
+        const res = await fetch(`${apiBaseInput.value}/admin/logs${from ? "?from=" + from : ""}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
         });
-      }
-
-      // Load Logs
-      if (loadLogsBtn) {
-        loadLogsBtn.addEventListener("click", async () => {
-          const baseUrl = apiBaseInput.value.trim();
-          if (!baseUrl) return alert("Enter API Base URL first!");
-
-          try {
-            const res = await fetch(`${baseUrl}/admin/logs`, {
-              method: "GET",
-              headers: { "Content-Type": "application/json" }
-            });
-
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const text = await res.text();
-            const data = safeJson(text);
-
-            if (!data) return;
-
-            logsTableBody.innerHTML = "";
-            data.forEach(row => {
-              const tr = document.createElement("tr");
-              tr.innerHTML = `
-                <td>${row.ts || ""}</td>
-                <td>${row.event || ""}</td>
-                <td>${row.name || ""}</td>
-                <td>${row.phone || ""}</td>
-                <td>${row.note || ""}</td>
-              `;
-              logsTableBody.appendChild(tr);
-            });
-
-          } catch (err) {
-            console.error(err);
-            alert(`Failed to load logs: ${err.message}`);
-          }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = safeJson(await res.text());
+        logsTableBody.innerHTML = "";
+        data?.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.ts || ""}</td>
+            <td>${row.event || ""}</td>
+            <td>${row.name || ""}</td>
+            <td>${row.phone || ""}</td>
+            <td>${row.note || ""}</td>
+          `;
+          logsTableBody.appendChild(tr);
         });
+      } catch (err) {
+        console.error(err);
+        alert(`Failed to load logs: ${err.message}`);
       }
     });
-  </script>
+
+  });
+</script>
 </body>
 </html>
