@@ -37,7 +37,7 @@
   <header>WedMatch — Admin Panel</header>
   <main>
 
-    <!-- API SETUP -->
+    <!-- API + Events -->
     <section class="card">
       <div class="row grid-2">
         <div>
@@ -47,7 +47,7 @@
             <button id="saveApi">Save API URL</button>
             <button id="diag" class="secondary">Run API Diagnostics</button>
           </div>
-          <div class="muted" style="margin-top:6px">Tip: Netlify डोमेन नहीं, अपना API Gateway Stage URL डालें।</div>
+          <div class="muted" style="margin-top:6px">Tip: Netlify डोमेन नहीं—API Gateway Stage URL दें।</div>
         </div>
         <div>
           <div class="inline">
@@ -69,10 +69,10 @@
       </div>
     </section>
 
-    <!-- UPLOAD -->
+    <!-- Upload -->
     <section class="card">
       <h3 style="margin:0 0 6px">Upload Photos</h3>
-      <div class="muted">इमेज ड्रैग-ड्रॉप करें या फाइल चुनें। Client-side resize → JPEG, फिर <code>/upload-url</code> से S3 में अपलोड।</div>
+      <div class="muted">Client‑side resize → JPEG, फिर <code>/upload-url</code> से अपलोड।</div>
 
       <div id="drop" class="drop" style="margin-top:10px">
         <b>इमेज यहाँ ड्रॉप करें</b> या
@@ -95,7 +95,7 @@
       <div id="thumbs" class="thumbs"></div>
     </section>
 
-    <!-- LOGS -->
+    <!-- Logs -->
     <section class="card">
       <h3 style="margin:0 0 6px">Search Logs</h3>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -104,13 +104,13 @@
         <button id="loadLogs">लोड करें</button>
       </div>
       <div style="overflow:auto;margin-top:10px">
-        <table id="logsTbl">
-          <thead><tr><th>TS</th><th>Event</th><th>Name</th><th>Phone</th><th>Note</th></tr></thead>
-          <tbody></tbody></table>
+        <table id="logsTbl"><thead>
+          <tr><th>TS</th><th>Event</th><th>Name</th><th>Phone</th><th>Note</th></tr>
+        </thead><tbody></tbody></table>
       </div>
     </section>
 
-    <!-- DEBUG -->
+    <!-- Debug -->
     <section class="card">
       <h3 style="margin:0 0 6px">Debug</h3>
       <div id="dbg" class="debug">ready</div>
@@ -119,242 +119,122 @@
   </main>
 
   <script>
-    /************* UTILITIES *************/
     const $ = (id)=>document.getElementById(id);
     const state = { apiBase:"" };
+    const delay=(ms)=>new Promise(r=>setTimeout(r,ms));
 
-    function toast(msg, ms=2800){
-      const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
-      document.body.appendChild(t); setTimeout(()=>t.remove(), ms);
-    }
-    function log(...a){
-      console.log(...a);
-      const el=$('dbg'); if(!el) return;
-      const s = a.map(x=>typeof x==='string'?x:JSON.stringify(x,null,2)).join(' | ');
-      el.textContent = new Date().toLocaleTimeString() + '  ' + s;
-    }
-    const delay = (ms)=>new Promise(r=>setTimeout(r,ms));
+    function toast(msg, ms=2600){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
+    function log(...a){ console.log(...a); const el=$('dbg'); if(!el) return; const s=a.map(x=>typeof x==='string'?x:JSON.stringify(x,null,2)).join(' | '); el.textContent=new Date().toLocaleTimeString()+'  '+s; }
 
-    // JSON-safe (server कभी-कभी text दे दे)
-    async function safeJson(res){
-      const txt = await res.text();
-      try{ return JSON.parse(txt); } catch{ return { _raw: txt }; }
-    }
+    async function safeJson(res){ const t=await res.text(); try{ return JSON.parse(t);}catch{ return {_raw:t}; } }
+    async function safeFetch(url,opts={},tout=2e4){ const c=new AbortController(); const tm=setTimeout(()=>c.abort(),tout); try{ return await fetch(url,{...opts,signal:c.signal}); } finally{ clearTimeout(tm);} }
 
-    // fetch with timeout
-    async function safeFetch(url, opts={}, timeoutMs=20000){
-      const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),timeoutMs);
-      try{ return await fetch(url,{...opts,signal:ctrl.signal}); }
-      finally{ clearTimeout(t); }
-    }
+    function build(base){ return {
+      events:   base+'/admin/events',
+      logs:     base+'/admin/logs',
+      upload:   base+'/upload-url',
+      download: base+'/download'
+    };}
 
-    // normalize endpoints from base
-    function build(base){
-      return {
-        events   : base + '/admin/events',
-        logs     : base + '/admin/logs',
-        upload   : base + '/upload-url',
-        download : base + '/download' // for thumbnail fallback
-      };
-    }
-
-    // image → JPEG (client-side)
-    async function toJpeg(file, maxDim=3000, quality=0.88){
-      const img = await new Promise((res,rej)=>{
-        const u=URL.createObjectURL(file), i=new Image();
-        i.onload=()=>{URL.revokeObjectURL(u);res(i)}; i.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; i.src=u;
-      });
-      const w=img.width,h=img.height; let nw=w,nh=h;
-      if(Math.max(w,h)>maxDim){ const k=maxDim/Math.max(w,h); nw=Math.round(w*k); nh=Math.round(h*k); }
-      const c=document.createElement('canvas'); c.width=nw; c.height=nh;
-      c.getContext('2d').drawImage(img,0,0,nw,nh);
-      const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',quality));
-      return new File([blob], file.name.replace(/\.(png|webp|heic|heif|bmp)$/i,'.jpg'), {type:'image/jpeg'});
-    }
-
-    function setProgress(pct){ $('bar').style.width=Math.max(0,Math.min(100,pct))+'%'; }
-
-    /************* API CALLS *************/
-    async function ensureApi(){
-      if(!state.apiBase){ toast('पहले API Base URL सेव करें'); throw new Error('apiBase not set'); }
-      if(!/^https?:\/\//i.test(state.apiBase)) { toast('API Base invalid'); throw new Error('bad apiBase'); }
-    }
+    async function ensureApi(){ if(!state.apiBase) throw new Error('Set API Base first'); }
 
     async function loadEvents(){
       await ensureApi();
-      const URL = build(state.apiBase).events;
-      const r = await safeFetch(URL);
-      if(!r.ok) throw new Error(`Events HTTP ${r.status}`);
-      const data = await safeJson(r);
-      const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
-      const sel = $('eventId');
-      if(items.length){
-        sel.innerHTML = items.map(e=>{
-          const id = e.eventId || e; const name = e.eventName || id; return `<option value="${id}">${name}</option>`;
-        }).join('');
-      }else{
-        sel.innerHTML = `<option value="">(no events)</option>`;
-      }
+      const r=await safeFetch(build(state.apiBase).events);
+      if(!r.ok) throw new Error('Events HTTP '+r.status);
+      const d=await safeJson(r);
+      const items=Array.isArray(d?.items)?d.items:(Array.isArray(d)?d:[]);
+      $('eventId').innerHTML = items.length
+        ? items.map(e=>`<option value="${e.eventId||e}">${e.eventName||e}</option>`).join('')
+        : `<option value="">(no events)</option>`;
       log('events', items);
     }
 
     async function addEvent(){
       await ensureApi();
-      const id = prompt('New eventId? (e.g. demo-2025-01)');
-      if(!id) return;
-      const body = { eventId:id.trim(), eventName:id.trim() };
-      const r = await safeFetch(build(state.apiBase).events, {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
-      });
+      const id=prompt('New eventId?'); if(!id) return;
+      const r=await safeFetch(build(state.apiBase).events,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:id,eventName:id})});
       const j=await safeJson(r);
-      if(!r.ok){ toast('Failed: '+(j.message||r.status)); return; }
-      toast('Event created'); await loadEvents();
-      const sel=$('eventId'); sel.value=id; // select new
+      if(!r.ok){ toast('Create failed'); log(j); return; }
+      toast('Event created'); await loadEvents(); $('eventId').value=id;
     }
 
     async function loadLogs(){
       await ensureApi();
-      const base=build(state.apiBase);
-      const from = $('fromTs').value ? `?from=${encodeURIComponent($('fromTs').value)}` : '';
-      const r = await safeFetch(base.logs + from);
-      if(!r.ok) throw new Error(`Logs HTTP ${r.status}`);
-      const payload = await safeJson(r);
-      const rows = payload?.items || payload || [];
+      const from=$('fromTs').value?`?from=${encodeURIComponent($('fromTs').value)}`:'';
+      const r=await safeFetch(build(state.apiBase).logs+from);
+      if(!r.ok) throw new Error('Logs HTTP '+r.status);
+      const p=await safeJson(r); const rows=p?.items||p||[];
       const tb=$('logsTbl').querySelector('tbody'); tb.innerHTML='';
-      rows.forEach(row=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML = `<td>${row.ts??''}</td><td>${row.event??''}</td><td>${row.name??''}</td><td>${row.phone??''}</td><td>${row.note??''}</td>`;
-        tb.appendChild(tr);
-      });
-      log('logs count', rows.length);
+      rows.forEach(x=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${x.ts??''}</td><td>${x.event??''}</td><td>${x.name??''}</td><td>${x.phone??''}</td><td>${x.note??''}</td>`; tb.appendChild(tr); });
+      log('logs', rows.length);
     }
 
-    async function getUploadUrl(filename, contentType){
+    function setProgress(p){$('bar').style.width=Math.max(0,Math.min(100,p))+'%';}
+
+    async function toJpeg(file,maxDim=3e3,q=0.88){
+      const img=await new Promise((res,rej)=>{ const u=URL.createObjectURL(file),i=new Image(); i.onload=()=>{URL.revokeObjectURL(u);res(i)}; i.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; i.src=u; });
+      let {width:w,height:h}=img; let nw=w,nh=h; if(Math.max(w,h)>maxDim){ const k=maxDim/Math.max(w,h); nw=Math.round(w*k); nh=Math.round(h*k);}
+      const c=document.createElement('canvas'); c.width=nw; c.height=nh; c.getContext('2d').drawImage(img,0,0,nw,nh);
+      const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',q)); return new File([blob], file.name.replace(/\.(png|webp|heic|heif|bmp)$/i,'.jpg'), {type:'image/jpeg'});
+    }
+
+    async function getUploadUrl(filename,contentType){
       await ensureApi();
-      const base=build(state.apiBase);
-      const body={
-        eventId : $('eventId').value || $('eventId').options[0]?.value || '',
-        bucket  : $('bucket').value,
-        filename, contentType
-      };
-      const r = await safeFetch(base.upload,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      const info = await safeJson(r);
-      if(!r.ok) throw new Error(`UploadUrl HTTP ${r.status}: ${JSON.stringify(info)}`);
-      // Support PUT and POST presign shapes:
-      if(info.uploadUrl) return {mode:'PUT', url:info.uploadUrl, key:info.key||info.s3Key};
-      if(info.url && info.fields) return {mode:'POST', url:info.url, fields:info.fields, key:info.key||info.s3Key};
-      if(info._raw) throw new Error(`Upload URL missing: ${info._raw}`);
+      const body={eventId:$('eventId').value||$('eventId').options[0]?.value||'',bucket:$('bucket').value,filename,contentType};
+      const r=await safeFetch(build(state.apiBase).upload,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const j=await safeJson(r); if(!r.ok) throw new Error(`UploadUrl HTTP ${r.status}: ${JSON.stringify(j)}`);
+      if(j.uploadUrl) return {mode:'PUT',url:j.uploadUrl,key:j.key||j.s3Key};
+      if(j.url && j.fields) return {mode:'POST',url:j.url,fields:j.fields,key:j.key||j.s3Key};
       throw new Error('Upload URL missing');
     }
+    async function s3Put(url,file){ const r=await safeFetch(url,{method:'PUT',headers:{'Content-Type':file.type},body:file},6e4); if(!r.ok) throw new Error('S3 PUT '+r.status); }
+    async function s3Post(url,fields,file){ const fd=new FormData(); Object.entries(fields).forEach(([k,v])=>fd.append(k,v)); fd.append('Content-Type',file.type); fd.append('file',file); const r=await safeFetch(url,{method:'POST',body:fd},6e4); if(!r.ok) throw new Error('S3 POST '+r.status); }
 
-    async function s3Put(url, file){
-      const r=await safeFetch(url,{method:'PUT',headers:{'Content-Type':file.type},body:file},60000);
-      if(!r.ok) throw new Error(`S3 PUT ${r.status}`);
-    }
-    async function s3Post(url, fields, file){
-      const fd=new FormData(); Object.entries(fields).forEach(([k,v])=>fd.append(k,v));
-      fd.append('Content-Type', file.type); fd.append('file', file);
-      const r=await safeFetch(url,{method:'POST',body:fd},60000);
-      if(!r.ok) throw new Error(`S3 POST ${r.status}`);
-    }
-
-    /************* UPLOAD FLOW *************/
     async function handleFiles(list){
-      const files=[...list].filter(f=>/image/i.test(f.type));
-      if(!files.length){ toast('No images found'); return; }
-      if(!$('eventId').value && !$('eventId').options.length){ toast('पहले Events लोड करें'); return; }
-
-      const maxDim=+$('maxDim').value||3000;
-      const q=+$('jpegQ').value||0.88;
-      const thumbs=$('thumbs'); thumbs.innerHTML='';
-
+      const arr=[...list].filter(f=>/image/i.test(f.type)); if(!arr.length){toast('No images');return;}
+      const thumbs=$('thumbs'); thumbs.innerHTML=''; const maxDim=+$('maxDim').value||3e3; const q=+$('jpegQ').value||.88;
       let done=0;
-      for(const f of files){
+      for(const f of arr){
         try{
           const jpg=await toJpeg(f,maxDim,q);
           const info=await getUploadUrl(jpg.name,jpg.type);
-          if(info.mode==='PUT') await s3Put(info.url, jpg); else await s3Post(info.url,info.fields,jpg);
+          if(info.mode==='PUT') await s3Put(info.url,jpg); else await s3Post(info.url,info.fields,jpg);
 
-          // ✅ Build view URL (PUT vs POST दोनों)
           let viewUrl='';
-          if(info.mode==='PUT'){
-            viewUrl=(info.url||'').split('?')[0];
-          }else{
-            const baseHost=(info.url||'').replace(/\?.*$/, '').replace(/\/$/, '');
-            const key=info.fields?.key || info.key || '';
-            const encKey=encodeURIComponent(key).replace(/%2F/g,'/');
-            viewUrl=`${baseHost}/${encKey}`;
-          }
+          if(info.mode==='PUT'){ viewUrl=(info.url||'').split('?')[0]; }
+          else{ const host=(info.url||'').replace(/\?.*$/,'').replace(/\/$/,''); const key=info.fields?.key||info.key||''; const encKey=encodeURIComponent(key).replace(/%2F/g,'/'); viewUrl=`${host}/${encKey}`; }
 
           const card=document.createElement('div'); card.className='thumb';
           card.innerHTML=`<img alt=""><div class="muted">${jpg.name}</div>`;
           const imgEl=card.querySelector('img'); imgEl.alt=jpg.name; imgEl.src=viewUrl;
 
-          // 🔁 private bucket fallback: /download से signed GET URL
+          // 🔁 HEAD 403/blocked → /download fallback
           try{
             fetch(viewUrl,{method:'HEAD'}).then(r=>{ if(!r.ok) throw new Error('head_fail'); }).catch(async()=>{
               const body={ bucket:$('bucket').value, key: info.fields?.key || info.key };
               const res=await safeFetch(build(state.apiBase).download,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
               const j=await safeJson(res); if(res.ok && (j.url||j.downloadUrl)) imgEl.src=j.url||j.downloadUrl;
             });
-          }catch{ /* ignore */ }
+          }catch{}
 
           thumbs.prepend(card);
-          done++; setProgress((done/files.length)*100);
-          $('upMsg').textContent=`Done: ${done}/${files.length}`;
-          log('uploaded', {name:jpg.name, key:info.key||''});
-        }catch(e){
-          console.error(e);
-          $('upMsg').textContent=`Error: ${e.message}`;
-          toast(`Upload error: ${e.message}`, 3500);
-          log('upload error', e?.message||e);
-        }
+          done++; setProgress((done/arr.length)*100);
+          $('upMsg').textContent=`Done: ${done}/${arr.length}`;
+          log('uploaded',{name:jpg.name,key:info.key||''});
+        }catch(e){ log(e); toast('Upload error'); $('upMsg').textContent='Error: '+e.message; }
         await delay(60);
       }
     }
 
-    /************* BOOT *************/
-    document.addEventListener('DOMContentLoaded', ()=>{
-      // restore apiBase
-      state.apiBase = localStorage.getItem('apiBase') || '';
-      $('apiBase').value = state.apiBase;
-
-      $('saveApi').addEventListener('click', ()=>{
-        const val=$('apiBase').value.trim();
-        if(!/^https?:\/\//i.test(val) || !val.includes('execute-api')){ toast('कृपया अपना API Gateway Stage URL डालें (execute-api…/PROD2)'); return; }
-        localStorage.setItem('apiBase', val); state.apiBase=val;
-        toast('API URL saved'); log('apiBase', val);
-        loadEvents().catch(err=>{toast('Events load failed'); log('events error', err?.message||err);});
-      });
-
-      $('diag').addEventListener('click', async ()=>{
-        if(!state.apiBase){ toast('Set API Base first'); return; }
-        const base=build(state.apiBase); log('diag base', state.apiBase);
-        try{
-          const r1=await safeFetch(base.events); log('diag /admin/events', r1.status);
-          const r2=await safeFetch(base.logs);   log('diag /admin/logs', r2.status);
-          const r3=await safeFetch(base.upload,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:'_diag_',bucket:'wedmatch-photos',filename:'test.jpg',contentType:'image/jpeg'})});
-          log('diag /upload-url', r3.status);
-          toast('Diagnostics complete');
-        }catch(e){ toast('Diagnostics failed'); log('diag error', e?.message||e); }
-      });
-
-      $('loadLogs').addEventListener('click', ()=>{
-        loadLogs().catch(e=>{toast('Logs failed'); log('logs error', e?.message||e);});
-      });
-
-      $('addEventBtn').addEventListener('click', ()=>{
-        addEvent().catch(e=>{toast('Create failed'); log('create error', e?.message||e);});
-      });
-
-      // drop/choose handlers
-      $('file').addEventListener('change', e=>handleFiles(e.target.files));
-      const dz=$('drop');
-      ;['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev, e=>{e.preventDefault();dz.classList.add('drag');}));
-      ;['dragleave','drop'].forEach(ev=>dz.addEventListener(ev, e=>{e.preventDefault();dz.classList.remove('drag');}));
-      dz.addEventListener('drop', e=>handleFiles(e.dataTransfer.files));
-
-      // अगर पहले से base है तो events ऑटो-लोड
+    document.addEventListener('DOMContentLoaded',()=>{
+      state.apiBase=localStorage.getItem('apiBase')||''; $('apiBase').value=state.apiBase;
+      $('saveApi').addEventListener('click',()=>{ const v=$('apiBase').value.trim(); if(!/^https?:\/\//.test(v)||!v.includes('execute-api')){toast('Correct stage URL दें');return;} localStorage.setItem('apiBase',v); state.apiBase=v; toast('Saved'); loadEvents().catch(e=>log('events error',e)); });
+      $('diag').addEventListener('click',async()=>{ if(!state.apiBase){toast('Set API');return;} const b=build(state.apiBase); log('diag base',state.apiBase); try{ const r1=await safeFetch(b.events); log('diag /admin/events',r1.status); const r2=await safeFetch(b.logs); log('diag /admin/logs',r2.status); const r3=await safeFetch(b.upload,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({eventId:'_diag_',bucket:'wedmatch-photos',filename:'test.jpg',contentType:'image/jpeg'})}); log('diag /upload-url',r3.status); toast('Diagnostics complete'); }catch(e){toast('Diagnostics failed');log(e);} });
+      $('addEventBtn').addEventListener('click',()=>addEvent().catch(e=>log('create error',e)));
+      $('loadLogs').addEventListener('click',()=>loadLogs().catch(e=>{toast('Logs failed');log(e);}));
+      $('file').addEventListener('change',e=>handleFiles(e.target.files));
+      const dz=$('drop'); ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');})); ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');})); dz.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
       if(state.apiBase) loadEvents().catch(()=>{});
     });
   </script>
