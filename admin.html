@@ -2,175 +2,328 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WedMatch — Admin Panel</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #fffaf5; margin: 0; }
-    header { background: orange; padding: 10px; font-size: 1.2em; font-weight: bold; }
-    section { max-width: 900px; margin: auto; padding: 20px; }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    select, input, button { padding: 6px; margin-top: 4px; }
-    button { background: orange; border: none; cursor: pointer; }
-    .drop-area { border: 2px dashed #ccc; padding: 20px; margin-top: 10px; background: #fff4e6; text-align: center; }
-    .log-table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    .log-table th, .log-table td { border: 1px solid #ccc; padding: 8px; }
-    .log-table th { background: #f2f2f2; }
-    .progress-bar { height: 6px; background: orange; margin-top: 5px; }
+    :root {
+      --brand: #ff8a00;
+      --bg: #fff7ef;
+      --card: #fff;
+      --muted: #8a8a8a;
+      --border: #e9d7c3;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial}
+    header{background:var(--brand);color:#111;padding:14px 18px;font-weight:700}
+    main{max-width:1100px;margin:0 auto;padding:18px}
+    .row{display:grid;gap:14px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+    label{font-weight:600;margin:6px 0 4px;display:block}
+    input,select,button,textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff}
+    button{background:var(--brand);border:none;font-weight:700;cursor:pointer}
+    button.secondary{background:#111;color:#fff}
+    .muted{color:var(--muted);font-size:12px}
+    .row-inline{display:flex;gap:10px;align-items:center}
+    .drop{border:2px dashed var(--border);border-radius:12px;background:#fffaf1;padding:18px;text-align:center}
+    .drop.drag{background:#fff0dc;border-color:#f2b56c}
+    .progress{height:8px;background:#ffe0b6;border-radius:99px;overflow:hidden;margin-top:8px}
+    .progress > i{display:block;height:100%;background:var(--brand);width:0%}
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}
+    .thumb{background:#fff;border:1px solid var(--border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
+    .thumb img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--border);padding:8px;text-align:left}
+    th{background:#fff2e0}
+    .pill{display:inline-flex;gap:6px}
+    .pill input{width:auto}
+    .debug{white-space:pre-wrap;background:#0e1116;color:#d6deeb;border-radius:12px;padding:12px;overflow:auto;max-height:220px}
+    .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;opacity:.95}
   </style>
 </head>
 <body>
-<header>WedMatch — Admin Panel</header>
-<section>
+  <header>WedMatch — Admin Panel</header>
+  <main>
 
-  <!-- API Base URL Setting -->
-  <label for="apiBaseInput">API Base URL</label>
-  <input id="apiBaseInput" type="text" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2
-" style="width:100%" />
-  <button id="saveApiBtn">Save API URL</button>
+    <!-- API SETUP -->
+    <section class="card">
+      <div class="row grid-2">
+        <div>
+          <label for="apiBase">API Base URL</label>
+          <input id="apiBase" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2" />
+          <div class="row-inline" style="margin-top:8px">
+            <button id="saveApi">Save API URL</button>
+            <button id="diag" class="secondary" title="End-to-end checks">Run API Diagnostics</button>
+          </div>
+          <div class="muted" style="margin-top:6px">
+            Tip: यह आपका **API Gateway Stage URL** होना चाहिए, Netlify डोमेन नहीं।
+          </div>
+        </div>
+        <div>
+          <label for="eventId">इवेंट चुनें</label>
+          <select id="eventId"></select>
+          <label for="bucket">S3 Bucket</label>
+          <select id="bucket">
+            <option value="wedmatch-photos">wedmatch-photos</option>
+          </select>
+        </div>
+      </div>
+    </section>
 
-  <!-- Event Selection -->
-  <label>इवेंट चुनें</label>
-  <select id="eventSelect"></select>
+    <!-- UPLOAD -->
+    <section class="card">
+      <h3 style="margin:0 0 6px">Upload Photos</h3>
+      <div class="muted">इमेज ड्रैग‑ड्रॉप करें या फाइल चुनें। Client‑side resize→JPEG, फिर `/upload-url` से S3 में अपलोड।</div>
+      <div id="drop" class="drop" style="margin-top:10px">
+        <b>इमेज यहाँ ड्रॉप करें</b> या
+        <input id="file" type="file" accept="image/*" multiple style="max-width:320px;margin-left:6px">
+      </div>
+      <div class="row grid-2" style="margin-top:10px">
+        <div>
+          <label for="maxDim">Max dimension (px)</label>
+          <input id="maxDim" type="number" value="3000">
+        </div>
+        <div>
+          <label for="jpegQ">JPEG quality</label>
+          <input id="jpegQ" type="number" step="0.01" value="0.88">
+        </div>
+      </div>
+      <div class="progress" aria-label="upload progress" style="margin-top:10px"><i id="bar"></i></div>
+      <div id="upMsg" class="muted" style="margin-top:8px">Ready.</div>
+      <div id="thumbs" class="thumbs"></div>
+    </section>
 
-  <!-- S3 Bucket Selection -->
-  <label>S3 Bucket</label>
-  <select id="bucketSelect">
-    <option value="wedmatch-photos">wedmatch-photos</option>
-  </select>
+    <!-- LOGS -->
+    <section class="card">
+      <h3 style="margin:0 0 6px">Search Logs</h3>
+      <div class="row-inline">
+        <label for="fromTs" style="margin:0">From (epoch ms)</label>
+        <input id="fromTs" type="number" placeholder="(optional)" style="max-width:260px">
+        <button id="loadLogs">लोड करें</button>
+      </div>
+      <div style="overflow:auto;margin-top:10px">
+        <table id="logsTbl">
+          <thead><tr><th>TS</th><th>Event</th><th>Name</th><th>Phone</th><th>Note</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-  <!-- Upload Photos -->
-  <h3>Upload Photos</h3>
-  <div id="dropArea" class="drop-area">इमेज यहाँ ड्रॉप करें या <input type="file" id="fileInput" multiple /></div>
-  <label>Max dimension (px)</label>
-  <input type="number" id="maxDim" value="3000" />
-  <label>JPEG quality</label>
-  <input type="number" step="0.01" id="jpegQuality" value="0.88" />
-  <div class="progress-bar" id="uploadProgress"></div>
+    <!-- DEBUG -->
+    <section class="card">
+      <h3 style="margin:0 0 6px">Debug</h3>
+      <div id="dbg" class="debug">ready</div>
+    </section>
+  </main>
 
-  <!-- Search Logs -->
-  <h3>Search Logs</h3>
-  <label>From (epoch ms)</label>
-  <input type="number" id="logsFrom" placeholder="(optional)" />
-  <button id="loadLogsBtn">लोड करें</button>
+  <script>
+    /************* UTILITIES *************/
+    const $ = (id)=>document.getElementById(id);
+    const state = { last:{}, apiBase:"" };
 
-  <table class="log-table" id="logsTable">
-    <thead>
-      <tr>
-        <th>TS</th>
-        <th>Event</th>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Note</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-</section>
-
-<script>
-  function safeJson(str) {
-    try { return JSON.parse(str); }
-    catch { console.warn("Invalid JSON:", str); return null; }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const apiBaseInput = document.getElementById("apiBaseInput");
-    const saveApiBtn = document.getElementById("saveApiBtn");
-    const loadLogsBtn = document.getElementById("loadLogsBtn");
-    const logsTableBody = document.querySelector("#logsTable tbody");
-    const dropArea = document.getElementById("dropArea");
-    const fileInput = document.getElementById("fileInput");
-    const uploadProgress = document.getElementById("uploadProgress");
-    const eventSelect = document.getElementById("eventSelect");
-    const bucketSelect = document.getElementById("bucketSelect");
-
-    // Restore API Base
-    const savedBase = localStorage.getItem("apiBase");
-    if (apiBaseInput && savedBase) apiBaseInput.value = savedBase;
-
-    saveApiBtn?.addEventListener("click", () => {
-      localStorage.setItem("apiBase", apiBaseInput.value);
-      alert("API Base URL saved!");
-    });
-
-    // Load Events
-    async function loadEvents() {
-      try {
-        const res = await fetch(`${apiBaseInput.value}/admin/events`);
-        const data = safeJson(await res.text());
-        if (Array.isArray(data)) {
-          eventSelect.innerHTML = data.map(ev => `<option value="${ev}">${ev}</option>`).join("");
-        }
-      } catch (err) { console.error("Load events error", err); }
+    function toast(msg, ms=2500){
+      const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+      document.body.appendChild(t); setTimeout(()=>t.remove(), ms);
     }
-    loadEvents();
+    function log(...a){ console.log(...a); const el=$('dbg'); if(!el) return;
+      el.textContent = [new Date().toLocaleTimeString(), ...a].map(x=>typeof x==='string'?x:JSON.stringify(x,null,2)).join(' | ');
+    }
+    const defer = (ms)=>new Promise(r=>setTimeout(r, ms));
 
-    // Upload handler
-    async function uploadFiles(files) {
-      for (let file of files) {
-        try {
-          // Get presigned URL
-          const res = await fetch(`${apiBaseInput.value}/upload-url`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              event: eventSelect.value,
-              bucket: bucketSelect.value,
-              filename: file.name
-            })
-          });
-          const uploadData = safeJson(await res.text());
-          if (!uploadData?.uploadUrl) throw new Error("Upload URL missing");
+    // Safe JSON parse for non-JSON bodies
+    async function safeJson(res){
+      const txt = await res.text();
+      try { return JSON.parse(txt); }
+      catch { return { _raw: txt }; }
+    }
 
-          // Upload file to S3
-          await fetch(uploadData.uploadUrl, { method: "PUT", body: file });
-          console.log("Uploaded:", file.name);
-        } catch (err) {
-          console.error("Upload error:", err);
+    // Fetch with timeout and diagnostics
+    async function safeFetch(url, opts={}, timeoutMs=20000){
+      const ctrl = new AbortController();
+      const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+      try{
+        const r = await fetch(url, {...opts, signal: ctrl.signal});
+        return r;
+      } finally { clearTimeout(t); }
+    }
+
+    // image resize to JPEG
+    async function toJpeg(file, maxDim=3000, quality=0.88){
+      const img = await new Promise((res,rej)=>{
+        const u = URL.createObjectURL(file);
+        const i = new Image();
+        i.onload = ()=>{ URL.revokeObjectURL(u); res(i); };
+        i.onerror = (e)=>{ URL.revokeObjectURL(u); rej(e); };
+        i.src = u;
+      });
+      const w=img.width, h=img.height;
+      let nw=w, nh=h;
+      if (Math.max(w,h)>maxDim){
+        const k = maxDim/Math.max(w,h);
+        nw = Math.round(w*k); nh = Math.round(h*k);
+      }
+      const cvs=document.createElement('canvas'); cvs.width=nw; cvs.height=nh;
+      const ctx=cvs.getContext('2d'); ctx.drawImage(img,0,0,nw,nh);
+      const blob = await new Promise(res=>cvs.toBlob(res,'image/jpeg',quality));
+      return new File([blob], file.name.replace(/\.(png|webp|heic|heif|bmp)$/i,'.jpg'), {type:'image/jpeg'});
+    }
+
+    // UI helpers
+    function setProgress(pct){ $('bar').style.width = Math.max(0, Math.min(100, pct)) + '%'; }
+
+    /************* API HELPERS *************/
+    function build(base){  // normalized endpoints
+      return {
+        events : base + '/admin/events',
+        logs   : base + '/admin/logs',
+        upload : base + '/upload-url'
+      };
+    }
+
+    async function loadEvents(){
+      const URL = build(state.apiBase).events;
+      const r = await safeFetch(URL, {method:'GET'});
+      if(!r.ok){ throw new Error(`Events HTTP ${r.status}`); }
+      const data = await safeJson(r);
+      const sel = $('eventId');
+      if (Array.isArray(data) && data.length){
+        sel.innerHTML = data.map(e=>`<option value="${e}">${e}</option>`).join('');
+      } else {
+        sel.innerHTML = `<option value="">(no events)</option>`;
+      }
+      log('events loaded', data);
+    }
+
+    async function loadLogs(){
+      const base = build(state.apiBase);
+      const from = $('fromTs').value ? `?from=${encodeURIComponent($('fromTs').value)}` : '';
+      const r = await safeFetch(base.logs + from, {method:'GET'});
+      if(!r.ok){ throw new Error(`Logs HTTP ${r.status}`); }
+      const rows = await safeJson(r);
+      const tb = $('logsTbl').querySelector('tbody');
+      tb.innerHTML = '';
+      (rows||[]).forEach(row=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.ts ?? ''}</td>
+          <td>${row.event ?? ''}</td>
+          <td>${row.name ?? ''}</td>
+          <td>${row.phone ?? ''}</td>
+          <td>${row.note ?? ''}</td>`;
+        tb.appendChild(tr);
+      });
+      log('logs', rows?.length ?? 0);
+    }
+
+    async function getUploadUrl(filename, contentType){
+      const base = build(state.apiBase);
+      const body = {
+        eventId : $('eventId').value || $('eventId').options[0]?.value || '',
+        bucket  : $('bucket').value,
+        filename, contentType
+      };
+      const r = await safeFetch(base.upload, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const info = await safeJson(r);
+      if(!r.ok){ throw new Error(`UploadUrl HTTP ${r.status}: ${JSON.stringify(info)}`); }
+      // Support both PUT and POST presign shapes, and plain text fallback
+      if (info.uploadUrl) return { mode:'PUT', url:info.uploadUrl, key:info.key || info.s3Key };
+      if (info.url && info.fields) return { mode:'POST', url:info.url, fields:info.fields, key:info.key || info.s3Key };
+      if (info._raw) throw new Error(`Upload URL missing: ${info._raw}`);
+      throw new Error('Upload URL missing');
+    }
+
+    async function putToS3_PUT(url, file){
+      const r = await safeFetch(url, { method:'PUT', headers:{'Content-Type': file.type}, body:file }, 60000);
+      if(!r.ok) throw new Error(`S3 PUT ${r.status}`);
+    }
+    async function putToS3_POST(url, fields, file){
+      const fd = new FormData();
+      Object.entries(fields).forEach(([k,v])=>fd.append(k,v));
+      fd.append('Content-Type', file.type);
+      fd.append('file', file);
+      const r = await safeFetch(url, { method:'POST', body:fd }, 60000);
+      if(!r.ok) throw new Error(`S3 POST ${r.status}`);
+    }
+
+    /************* UPLOAD FLOW *************/
+    async function handleFiles(fileList){
+      const files = [...fileList].filter(f=>/image/i.test(f.type));
+      if(!files.length){ toast('No images found'); return; }
+      const maxDim = +$('maxDim').value || 3000;
+      const q = +$('jpegQ').value || 0.88;
+
+      const thumbs = $('thumbs'); thumbs.innerHTML = '';
+      let done=0;
+      for (const f of files){
+        try{
+          const jpg = await toJpeg(f, maxDim, q);
+          const info = await getUploadUrl(jpg.name, jpg.type);
+          if (info.mode==='PUT') await putToS3_PUT(info.url, jpg);
+          else await putToS3_POST(info.url, info.fields, jpg);
+
+          // show thumb (best effort)
+          const url = (info.url?.split('?')[0]) || '';
+          const card = document.createElement('div');
+          card.className='thumb';
+          card.innerHTML = `<img alt=""><div class="muted">${jpg.name}</div>`;
+          const img = card.querySelector('img'); img.src = url; // may need signed GET in future
+          thumbs.prepend(card);
+
+          done++;
+          setProgress((done/files.length)*100);
+          $('upMsg').textContent = `Done: ${done}/${files.length}`;
+          log('uploaded', {name: jpg.name, info});
+        }catch(e){
+          console.error(e);
+          $('upMsg').textContent = `Error: ${e.message}`;
+          toast(`Upload error: ${e.message}`, 3500);
+          log('upload error', e?.message||e);
         }
+        await defer(80);
       }
     }
 
-    fileInput?.addEventListener("change", e => uploadFiles(e.target.files));
+    /************* BOOT *************/
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      // restore api base
+      state.apiBase = localStorage.getItem('apiBase') || '';
+      $('apiBase').value = state.apiBase;
 
-    dropArea?.addEventListener("dragover", e => { e.preventDefault(); dropArea.style.background = "#ffe0b3"; });
-    dropArea?.addEventListener("dragleave", e => { e.preventDefault(); dropArea.style.background = "#fff4e6"; });
-    dropArea?.addEventListener("drop", e => {
-      e.preventDefault();
-      dropArea.style.background = "#fff4e6";
-      uploadFiles(e.dataTransfer.files);
+      // events + handlers
+      $('saveApi').addEventListener('click', ()=>{
+        const val = $('apiBase').value.trim();
+        if(!/^https?:\/\//.test(val)){ toast('कृपया पूरा API URL डालें'); return; }
+        localStorage.setItem('apiBase', val); state.apiBase = val;
+        toast('API URL saved'); log('apiBase', val);
+        loadEvents().catch(err=>toast('Events load failed'));
+      });
+
+      $('diag').addEventListener('click', async ()=>{
+        if(!state.apiBase) return toast('Set API Base first');
+        const base = build(state.apiBase);
+        try{
+          const r1 = await safeFetch(base.events); log('diag events', r1.status);
+          const r2 = await safeFetch(base.logs);   log('diag logs', r2.status);
+          const r3 = await safeFetch(base.upload, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({eventId:'_diag_', filename:'test.jpg', contentType:'image/jpeg'})});
+          log('diag upload-url', r3.status);
+          toast('Diagnostics run complete');
+        }catch(e){ log('diag error', e?.message||e); toast('Diagnostics failed'); }
+      });
+
+      $('loadLogs').addEventListener('click', ()=>loadLogs().catch(e=>toast(e.message)));
+      $('file').addEventListener('change', (e)=>handleFiles(e.target.files));
+      const drop = $('drop');
+      drop.addEventListener('dragover', (e)=>{e.preventDefault(); drop.classList.add('drag');});
+      drop.addEventListener('dragleave', ()=>drop.classList.remove('drag'));
+      drop.addEventListener('drop', (e)=>{ e.preventDefault(); drop.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+
+      // auto-load events if apiBase present
+      if(state.apiBase) loadEvents().catch(()=>{});
     });
-
-    // Load Logs
-    loadLogsBtn?.addEventListener("click", async () => {
-      try {
-        const from = document.getElementById("logsFrom").value;
-        const res = await fetch(`${apiBaseInput.value}/admin/logs${from ? "?from=" + from : ""}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = safeJson(await res.text());
-        logsTableBody.innerHTML = "";
-        data?.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${row.ts || ""}</td>
-            <td>${row.event || ""}</td>
-            <td>${row.name || ""}</td>
-            <td>${row.phone || ""}</td>
-            <td>${row.note || ""}</td>
-          `;
-          logsTableBody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error(err);
-        alert(`Failed to load logs: ${err.message}`);
-      }
-    });
-
-  });
-</script>
+  </script>
 </body>
 </html>
