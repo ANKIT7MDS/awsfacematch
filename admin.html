@@ -1,279 +1,225 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WedMatch — Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — WedMatch</title>
   <style>
-    :root{
-      --brand:#ff8b1e; --brand-dark:#ea7000;
-      --ink:#0b1020; --paper:#fff7ef; --panel:#fff;
-      --muted:#6b7280; --ring:rgba(255,139,30,.25);
-      --ok:#16a34a; --err:#dc2626; --radius:16px;
-    }
-    *{box-sizing:border-box} html,body{height:100%}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Noto Sans",Helvetica,Arial; background:linear-gradient(180deg,var(--paper),#fff); color:var(--ink)}
-    header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,var(--brand),var(--brand-dark));color:#fff;padding:18px 16px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-    header .title{max-width:1100px;margin:auto;display:flex;align-items:center;gap:12px}
-    header h1{margin:0;font-size:20px;font-weight:800}
-    main{max-width:1100px;margin:20px auto;padding:0 12px 40px}
-    .grid{display:grid;gap:16px}
-    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--panel);border-radius:var(--radius);padding:16px;border:1px solid #f1e2d3;box-shadow:0 6px 24px rgba(0,0,0,.06)}
-    .card h2{margin:0 0 12px;font-size:18px}
-    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
-    input[type=text],input[type=tel],input[type=number],select{
-      width:100%;padding:12px;border-radius:12px;border:1px solid #e6d8c9;outline:0;background:#fff;color:var(--ink);font-size:14px}
-    input:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 4px var(--ring)}
-    .row{display:grid;gap:12px} .row-2{grid-template-columns:1fr 1fr}
-    @media(min-width:760px){.row-3{grid-template-columns:repeat(3,1fr)}}
-    button{appearance:none;border:0;background:var(--brand);color:#fff;font-weight:700;padding:12px 18px;border-radius:12px;cursor:pointer;transition:.2s;box-shadow:0 6px 16px rgba(255,139,30,.25)}
-    button.secondary{background:#0b1428}
-    button.ghost{background:#fff;color:#111;border:1px solid #eee;box-shadow:none}
-    button:hover{transform:translateY(-1px);background:var(--brand-dark)}
-    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
-    th,td{padding:10px 8px;border-bottom:1px dashed #f0e2d6;text-align:left}
-    th{color:#8b6f57;font-weight:700}
-    .small{font-size:12px}.muted{color:var(--muted)}
-    .ok{color:var(--ok)} .err{color:var(--err)}
-    .list{display:grid;gap:10px}
-    .line{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#fff7ef;border:1px solid #f0dfcd;border-radius:10px}
-    .thumb{width:72px;height:72px;object-fit:cover;border-radius:10px;background:#eee;border:1px solid #f0f0f0}
+    :root{--brand:#ff9800;--ink:#0f1a2b;--bg:#fff5e7;--card:#fff;--line:#f0d7b6}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,#fff,var(--bg));color:#222}
+    header{background:var(--brand);color:#111;padding:12px 16px;font-weight:800}
+    .wrap{max-width:1100px;margin:18px auto;padding:0 14px}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:14px}
+    h3{margin:0 0 10px 0}
+    label{font-size:13px;color:#444;margin-bottom:6px;display:block}
+    select,input,button{font:inherit}
+    select,input[type=text]{width:100%;padding:10px;border:1px solid var(--line);border-radius:12px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btn{background:var(--brand);border:0;color:#111;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
+    .btn.subtle{background:#fff;border:1px solid var(--line)}
+    .pill{display:inline-block;background:var(--ink);color:#fff;border-radius:20px;padding:6px 10px;font-size:12px}
+    .muted{color:#666;font-size:12px}
+    .drop{border:2px dashed var(--line);border-radius:14px;padding:18px;text-align:center;background:#fff7ec}
+    .bar{height:8px;background:#ffe0b3;border-radius:6px;overflow:hidden}
+    .bar>i{display:block;height:100%;width:0;background:#ff9800;transition:width .3s}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;font-size:14px}
+    th{background:#fff7ec}
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+    .card-img{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#faf6ef;display:flex;align-items:center;justify-content:center;min-height:120px}
+    .card-img img{width:100%;height:100%;object-fit:cover}
   </style>
 </head>
 <body>
-<header>
-  <div class="title">
-    <h1>WedMatch — Admin Panel</h1>
-    <span class="small" style="opacity:.9">Manage events • users • uploads • logs</span>
-  </div>
-</header>
+  <header>WedMatch — Admin Panel</header>
+  <main class="wrap">
+    <div class="grid">
+      <!-- Events & Settings -->
+      <section class="card">
+        <h3>इवेंट चुनें</h3>
+        <div class="row">
+          <div>
+            <label for="eventSel">Event</label>
+            <select id="eventSel"></select>
+          </div>
+          <div>
+            <label for="bucket">S3 Bucket</label>
+            <input id="bucket" type="text" />
+          </div>
+        </div>
+        <p class="muted">नीचे ड्रैग-ड्रॉप या फाइल चुनें। JPEG में client-side resize होगा, फिर <code>/upload-url</code> से प्रीसाइन URL लेकर S3 में अपलोड होगा।</p>
+      </section>
 
-<main class="grid">
-  <!-- EVENTS -->
-  <section class="card">
-    <h2>Events</h2>
-    <div class="row row-3">
-      <div><label>Event ID</label><input id="ev-id" type="text" placeholder="eg. demo-2025-01" /></div>
-      <div><label>Name</label><input id="ev-name" type="text" placeholder="eg. Sangeet" /></div>
-      <div><label>PIN (optional)</label><input id="ev-pin" type="text" placeholder="eg. 1234" /></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button onclick="saveEvent()">Save</button>
-      <button class="secondary" onclick="loadEvents()">Refresh</button>
-    </div>
-    <div id="ev-msg" class="small muted" style="margin-top:6px"></div>
-    <table id="ev-table"><thead><tr><th>eventId</th><th>name</th><th>pin</th></tr></thead><tbody></tbody></table>
-  </section>
+      <!-- Uploader -->
+      <section class="card">
+        <h3>Upload Photos</h3>
+        <div id="drop" class="drop">इमेज यहाँ ड्रॉप करें या <input id="file" type="file" accept="image/*" multiple /></div>
+        <div style="margin-top:10px" class="row">
+          <div>
+            <label>Max dimension (px)</label>
+            <input id="maxDim" type="text" value="3000" />
+          </div>
+          <div>
+            <label>JPEG quality</label>
+            <input id="quality" type="text" value="0.88" />
+          </div>
+        </div>
+        <div style="margin-top:10px" class="bar"><i id="pbar"></i></div>
+        <div id="upMsg" class="muted"></div>
+        <div class="thumbs" id="recent"></div>
+      </section>
 
-  <!-- USERS -->
-  <section class="card">
-    <h2>Users</h2>
-    <div class="row row-3">
-      <div><label>Name</label><input id="u-name" type="text" placeholder="User name" /></div>
-      <div><label>Phone</label><input id="u-phone" type="tel" placeholder="10-digit" /></div>
-      <div><label>Event ID</label><input id="u-event" type="text" placeholder="eg. demo-2025-01" /></div>
+      <!-- Logs -->
+      <section class="card">
+        <h3>Search Logs</h3>
+        <div class="row">
+          <div>
+            <label for="fromTs">From (epoch ms)</label>
+            <input id="fromTs" type="text" placeholder="(optional)"/>
+          </div>
+          <div style="align-self:end"><button id="loadLogs" class="btn">लोड करें</button></div>
+        </div>
+        <div style="overflow:auto;max-height:360px;margin-top:8px">
+          <table id="logsTbl">
+            <thead><tr><th>TS</th><th>Event</th><th>Name</th><th>Phone</th><th>Note</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
     </div>
-    <div class="row row-3">
-      <div><label>Role</label>
-        <select id="u-role"><option value="user">user</option><option value="admin">admin</option></select>
-      </div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button onclick="addUser()">Add</button>
-      <button class="secondary" onclick="loadUsers()">Refresh</button>
-    </div>
-    <div id="u-msg" class="small muted" style="margin-top:6px"></div>
-    <table id="u-table"><thead><tr><th>eventId</th><th>personId</th><th>name</th><th>phone</th><th>role</th></tr></thead><tbody></tbody></table>
-  </section>
-
-  <!-- UPLOAD -->
-  <section class="card">
-    <h2>Upload photos to an Event</h2>
-    <div class="row row-2">
-      <div><label>Event ID</label><input id="up-event" type="text" placeholder="eg. demo-2025-01" /></div>
-      <div><label>Choose files (multiple)</label><input id="up-files" type="file" multiple accept="image/*" /></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button onclick="startUpload()">Generate Links & Upload</button>
-      <span class="small muted">Uploads: presigned POST → S3</span>
-    </div>
-    <div id="up-log" class="list" style="margin-top:10px"></div>
-    <div id="up-list" class="list" style="margin-top:10px"></div>
-  </section>
-
-  <!-- LOGS -->
-  <section class="card">
-    <h2>Search Logs</h2>
-    <div class="row row-2">
-      <div><label>Filter (client-side) by Event ID</label><input id="log-filter" type="text" placeholder="eg. demo-2025-01 or leave blank" /></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button class="secondary" onclick="loadLogs()">Refresh</button>
-    </div>
-    <table id="log-table"><thead><tr><th>time</th><th>eventId</th><th>name</th><th>phone</th><th>matches</th><th>ip</th></tr></thead><tbody></tbody></table>
-  </section>
-</main>
-
-<footer class="small muted" style="max-width:1100px;margin:10px auto 30px;padding:0 12px">
-  Uses AWS API Gateway + Lambda + DynamoDB + S3 (presigned). Keep your S3 bucket private; downloads always via presigned links.
-</footer>
+  </main>
 
 <script>
-/* ===================== CONFIG ===================== */
-const BASE = "https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2";   // <-- अपना API base
-const CFG = {
-  events:   BASE + "/admin/events",
-  users:    BASE + "/admin/users",
-  logs:     BASE + "/admin/logs",
-  upload:   BASE + "/upload-url",
-  download: BASE + "/download",
-  bucket:   "wedmatch-photos"                                                     // <-- अपना bucket
-};
+// ====== CONFIG ======
+const API_BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
+const URL_EVENTS = API_BASE + '/admin/events'; // GET list, POST create {eventId,eventName,date}
+const URL_UPLOAD = API_BASE + '/upload-url';   // POST {eventId, filename, contentType}
+const URL_LOGS   = API_BASE + '/logs';         // GET ?from=<ms>
 
-/* ===================== Helpers ===================== */
-const qs = (s,root=document)=>root.querySelector(s);
-const qsa = (s,root=document)=>Array.from(root.querySelectorAll(s));
-const fmtTime = n => new Date(Number(n||Date.now())).toLocaleString();
+// ====== ELEMENTS ======
+const sel = document.getElementById('eventSel');
+const bucketEl = document.getElementById('bucket');
+const drop = document.getElementById('drop');
+const file = document.getElementById('file');
+const pbar = document.getElementById('pbar');
+const upMsg = document.getElementById('upMsg');
+const recent = document.getElementById('recent');
+const maxDimEl = document.getElementById('maxDim');
+const qualityEl = document.getElementById('quality');
+const loadLogsBtn = document.getElementById('loadLogs');
+const logsTbl = document.querySelector('#logsTbl tbody');
 
-function toast(el, msg, ok=true){ el.textContent = msg; el.style.color = ok ? "var(--ok)" : "var(--err)"; }
-async function apiGET(url){ const r=await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
-async function apiPOST(url,data){ const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data||{})}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+// ====== INIT ======
+(async function init(){
+  await loadEvents();
+  // Try to detect bucket from first event's path convention if needed
+  bucketEl.value = 'wedmatch-photos';
+})();
 
-async function getPresignedUrl(s3Key){ const j = await apiPOST(CFG.download,{bucket:CFG.bucket,s3Key}); return j.url; }
-async function openPhoto(s3Key){ try{ const url = await getPresignedUrl(s3Key); window.open(url,"_blank"); } catch(e){ alert("Open failed"); } }
-
-/* ===================== Events ===================== */
-async function saveEvent(){
-  const eventId = qs("#ev-id").value.trim();
-  const name    = qs("#ev-name").value.trim();
-  const pin     = qs("#ev-pin").value.trim();
-  const msg = qs("#ev-msg");
-  if(!eventId){ toast(msg,"eventId required",false); return; }
-  try{ await apiPOST(CFG.events,{eventId,name,pin}); toast(msg,"Saved"); loadEvents(); }
-  catch(e){ toast(msg,"Failed: "+e.message,false); }
-}
 async function loadEvents(){
-  const tbody = qs("#ev-table tbody"); tbody.innerHTML = "";
-  try{
-    const j = await apiGET(CFG.events);
-    (j.items||[]).forEach(x=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${x.eventId||""}</td><td>${x.name||""}</td><td>${x.pin||""}</td>`;
-      tbody.appendChild(tr);
-    });
-  }catch(e){ const tr=document.createElement("tr"); tr.innerHTML=`<td colspan="3" class="muted">Failed: ${e.message}</td>`; tbody.appendChild(tr); }
-}
-
-/* ===================== Users ===================== */
-async function addUser(){
-  const name = qs("#u-name").value.trim();
-  const phone = qs("#u-phone").value.trim();
-  const eventId = qs("#u-event").value.trim();
-  const role = qs("#u-role").value;
-  const msg = qs("#u-msg");
-  if(!name||!phone||!eventId){ toast(msg,"name/phone/eventId required",false); return; }
-  try{
-    await apiPOST(CFG.users,{name,phone,eventId,role});
-    toast(msg,"Added");
-    loadUsers();
-  }catch(e){ toast(msg,"Failed: "+e.message,false); }
-}
-async function loadUsers(){
-  const tbody = qs("#u-table tbody"); tbody.innerHTML = "";
-  try{
-    const j = await apiGET(CFG.users);
-    (j.items||[]).forEach(x=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${x.eventId||""}</td><td>${x.personId||""}</td><td>${x.name||""}</td><td>${x.phone||""}</td><td>${x.role||""}</td>`;
-      tbody.appendChild(tr);
-    });
-  }catch(e){ const tr=document.createElement("tr"); tr.innerHTML=`<td colspan="5" class="muted">Failed: ${e.message}</td>`; tbody.appendChild(tr); }
-}
-
-/* ===================== Upload ===================== */
-function logLine(text, ok=true){
-  const el = document.createElement("div");
-  el.className = "small " + (ok ? "ok" : "err");
-  el.textContent = text;
-  qs("#up-log").prepend(el);
-}
-async function startUpload(){
-  const eventId = qs("#up-event").value.trim();
-  const files = qs("#up-files").files;
-  if(!eventId){ alert("Event ID required"); return; }
-  if(!files?.length){ alert("Choose at least one file"); return; }
-
-  for(const file of files){
-    try{
-      const item = await uploadOne(file, eventId);
-      await renderUploaded(item); // preview block
-      logLine(`OK: ${file.name}`);
-    }catch(e){
-      console.error(e);
-      logLine(`ERR: ${file.name} — ${e.message}`, false);
-    }
-  }
-}
-async function uploadOne(file, eventId){
-  // 1) presigned POST
-  const presign = await apiPOST(CFG.upload,{
-    eventId,
-    fileName: file.name,
-    contentType: file.type || "image/jpeg"
+  const res = await fetch(URL_EVENTS);
+  const data = await res.json();
+  const items = Array.isArray(data.items) ? data.items : (data.events||[]);
+  sel.innerHTML = '';
+  items.forEach(ev=>{
+    const opt = document.createElement('option');
+    opt.value = ev.eventId || ev.EventID || ev.id; opt.textContent = (ev.eventName||ev.name||opt.value);
+    sel.appendChild(opt);
   });
-  // presign => { bucket, key, url, fields:{...} }
-  const form = new FormData();
-  Object.entries(presign.fields).forEach(([k,v])=>form.append(k,v));
-  form.append("file", file);
-  // 2) POST to S3
-  const r = await fetch(presign.url,{ method:"POST", body:form });
-  if(!r.ok) throw new Error("S3 upload failed ("+r.status+")");
-  return { s3Key: presign.key, fileName: file.name, eventId };
-}
-async function renderUploaded({s3Key,fileName,eventId}){
-  const box = document.createElement("div");
-  box.className = "line";
-  const left = document.createElement("div");
-  left.style.display="flex"; left.style.alignItems="center"; left.style.gap="10px";
-
-  const img = document.createElement("img");
-  img.className = "thumb"; img.alt = fileName; img.loading = "lazy";
-  try { img.src = await getPresignedUrl(s3Key); } catch(_) { /* ignore preview fail */ }
-
-  const meta = document.createElement("div");
-  meta.innerHTML = `<div><strong>${fileName}</strong></div><div class="small muted">${eventId}</div>`;
-
-  left.appendChild(img); left.appendChild(meta);
-
-  const actions = document.createElement("div"); actions.className="actions";
-  const btn = document.createElement("button"); btn.className="ghost"; btn.textContent="Open";
-  btn.onclick = ()=> openPhoto(s3Key);
-  actions.appendChild(btn);
-
-  box.appendChild(left); box.appendChild(actions);
-  qs("#up-list").prepend(box);
 }
 
-/* ===================== Logs ===================== */
-async function loadLogs(){
-  const tbody = qs("#log-table tbody"); tbody.innerHTML = "";
-  try{
-    const j = await apiGET(CFG.logs);
-    const filter = qs("#log-filter").value.trim();
-    (j.items||[])
-      .filter(x => !filter || (x.eventId||"").includes(filter))
-      .slice(0,500)
-      .forEach(x=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${fmtTime(x.time)}</td><td>${x.eventId||""}</td><td>${x.name||""}</td><td>${x.phone||""}</td><td>${x.matches||""}</td><td>${x.ip||""}</td>`;
-        tbody.appendChild(tr);
-      });
-  }catch(e){ const tr=document.createElement("tr"); tr.innerHTML=`<td colspan="6" class="muted">Failed: ${e.message}</td>`; tbody.appendChild(tr); }
+// ====== UPLOAD FLOW ======
+;['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.background='#fff1dc';}));
+;['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.background=''; if(ev==='drop'){ handleFiles(e.dataTransfer.files); }}));
+file.addEventListener('change', e=> handleFiles(e.target.files));
+
+async function handleFiles(list){
+  const eventId = sel.value; if(!eventId){ alert('पहले Event चुनें'); return; }
+  if(!list || !list.length) return;
+  const maxDim = Math.max(256, parseInt(maxDimEl.value||'3000',10));
+  const quality = Math.min(0.95, Math.max(0.5, parseFloat(qualityEl.value||'0.88')));
+
+  let done=0; pbar.style.width='0%'; upMsg.textContent='Uploading...';
+
+  for(const f of list){
+    try{
+      const {blob,ext} = await toJpegResized(f, maxDim, quality);
+      const filename = (f.name.replace(/\.[^.]+$/,'')||('photo_'+Date.now())) + '.jpg';
+      const contentType = 'image/jpeg';
+
+      // 1) ask API for presigned URL
+      const upReq = { eventId, filename, contentType };
+      const r = await fetch(URL_UPLOAD,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(upReq)});
+      const info = await r.json();
+
+      // support both PUT style {uploadUrl,key} and POST style {url,fields,key}
+      const key = info.key || info.s3Key || `events/${eventId}/${filename}`;
+
+      if(info.uploadUrl){
+        // PUT style
+        await fetch(info.uploadUrl,{method:'PUT',headers:{'Content-Type':contentType},body:blob});
+      } else if(info.url && info.fields){
+        // POST style (HTML form data to S3)
+        const fd = new FormData();
+        Object.entries(info.fields).forEach(([k,v])=>fd.append(k,v));
+        fd.append('Content-Type', contentType);
+        fd.append('file', blob);
+        await fetch(info.url,{method:'POST',body:fd});
+      } else {
+        // ultimate fallback (not ideal): direct PUT to bucket if CORS allows
+        const url = `https://${bucketEl.value}.s3.ap-south-1.amazonaws.com/${encodeURIComponent(key)}`;
+        await fetch(url,{method:'PUT',headers:{'Content-Type':contentType},body:blob});
+      }
+
+      // show recent tile
+      const imgUrl = `https://${bucketEl.value}.s3.ap-south-1.amazonaws.com/${encodeURIComponent(key)}`;
+      const div = document.createElement('div');
+      div.className='card-img';
+      const img = document.createElement('img');
+      img.loading='lazy'; img.src = imgUrl; div.appendChild(img);
+      recent.prepend(div);
+
+    }catch(e){ console.error(e); alert('Upload failed: '+(e.message||e)); }
+    finally{ done++; pbar.style.width = Math.round((done/list.length)*100)+'%'; }
+  }
+
+  upMsg.textContent = `Done: ${done}/${list.length}`;
 }
 
-/* ===================== init ===================== */
-loadEvents(); loadUsers(); // logs on demand
+function toJpegResized(file, maxDim, quality){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader(); fr.onerror = reject;
+    fr.onload = ()=>{ const img = new Image(); img.onload=()=>{
+      const iw=img.naturalWidth, ih=img.naturalHeight; const sc=Math.min(1, maxDim/Math.max(iw,ih));
+      const w=Math.round(iw*sc), h=Math.round(ih*sc);
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const cx=c.getContext('2d'); cx.drawImage(img,0,0,w,h);
+      c.toBlob(b=> resolve({blob:b,ext:'jpg'}), 'image/jpeg', quality);
+    }; img.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+
+// ====== LOGS ======
+loadLogsBtn.onclick = async ()=>{
+  const from = document.getElementById('fromTs').value.trim();
+  const url = from ? `${URL_LOGS}?from=${encodeURIComponent(from)}` : URL_LOGS;
+  const res = await fetch(url); const data = await res.json();
+  const items = data.items || data.logs || [];
+  logsTbl.innerHTML = '';
+  for(const it of items){
+    const tr = document.createElement('tr');
+    const ts = it.ts || it.timestamp || Date.now();
+    const name = it.name || '';
+    const phone = it.phone || '';
+    const eventId = it.eventId || '';
+    const note = it.note || it.info || '';
+    tr.innerHTML = `<td>${new Date(Number(ts)).toLocaleString()}</td><td>${eventId}</td><td>${name}</td><td>${phone}</td><td>${note}</td>`;
+    logsTbl.appendChild(tr);
+  }
+};
 </script>
 </body>
 </html>
