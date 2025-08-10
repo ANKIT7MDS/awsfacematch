@@ -2,224 +2,261 @@
 <html lang="hi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Selfie Search — WedMatch</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WedMatch — Selfie Search</title>
   <style>
-    :root{
-      --brand:#ff9800; --brand-dark:#0f1a2b; --bg:#fde7c3; --card:#f6efe6; --accent:#efb768;
-    }
+    :root{--brand:#ff8a00;--bg:#fff7ef;--border:#e9d7c3;--ink:#222}
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#fff, var(--bg)); color:#1b1b1b}
-    header{background:var(--brand);color:#111;padding:14px 16px;font-weight:700}
-    .wrap{max-width:1080px;margin:18px auto;padding:0 14px}
-    .panel{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px;margin-bottom:16px;border:1px solid #f1d4ad}
-    .row{display:grid;grid-template-columns:1fr 320px;gap:16px}
-    label{font-size:13px;margin-bottom:6px;display:block;color:#333}
-    input[type=text]{width:100%;padding:12px 10px;border-radius:12px;border:1px solid #d7c2a3}
-    .btn{display:inline-block;background:var(--brand);border:0;color:#111;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
-    .btn.dark{background:var(--brand-dark);color:#fff}
-    .btn.alt{background:#fff;border:1px solid #e2c79a}
-    .stack>*{margin-bottom:10px}
-    .camera{background:#000;border-radius:14px;border:2px dashed #f0c483;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:240px}
-    video,canvas{max-width:100%;display:block}
-    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
-    .card{background:var(--card);border-radius:14px;border:2px solid #efc27d;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:150px;position:relative}
-    .card img{width:100%;height:100%;object-fit:cover;display:block}
-    .meta{display:flex;align-items:center;gap:12px}
-    .note{font-size:13px;color:#666}
-    .pill{display:inline-block;background:var(--brand-dark);color:#fff;border-radius:20px;padding:6px 10px;font-size:12px}
-    .footer{margin-top:8px;display:flex;justify-content:space-between;align-items:center}
-    .error{color:#b00020;font-weight:600}
+    body{margin:0;background:var(--bg);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--ink)}
+    header{background:var(--brand);padding:14px 18px;font-weight:700}
+    main{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+    label{font-weight:600;margin:6px 0 4px;display:block}
+    input,select,button,textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff}
+    button{background:var(--brand);border:none;font-weight:700;cursor:pointer}
+    .row{display:grid;gap:12px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .grid-3{grid-template-columns:repeat(3,1fr)}
+    .muted{font-size:12px;color:#666}
+    .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+    .photo{position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;background:#fff}
+    .photo img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+    .photo .check{position:absolute;right:8px;top:8px;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid #888;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;opacity:.0;transition:all .15s}
+    .photo.selected{outline:3px solid #1e90ff}
+    .photo.selected .check{opacity:1;background:#1e90ff;border-color:#1e90ff}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{padding:8px 10px;border-radius:999px;background:#111;color:#fff;font-weight:700}
   </style>
 </head>
 <body>
-  <header>भारतीय जनता पार्टी — मंदसौर</header>
-  <main class="wrap">
-    <section class="panel">
-      <h2 style="margin:0 0 8px 0">अपनी फोटो ढूँढें (Selfie Search)</h2>
-      <div class="row">
+  <header>WedMatch — Selfie Search</header>
+  <main>
+
+    <!-- API + Event -->
+    <section class="card">
+      <div class="row grid-2">
         <div>
-          <div class="camera" id="camBox">
-            <video id="video" autoplay playsinline muted></video>
-            <canvas id="canvas" style="display:none"></canvas>
-          </div>
+          <label for="apiBase">API Base URL</label>
+          <input id="apiBase" placeholder="https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2" />
+          <div style="margin-top:8px"><button id="saveApi">Save API URL</button></div>
+          <div class="muted" style="margin-top:6px">Tip: यह आपका API Gateway stage URL है।</div>
         </div>
-        <div class="stack">
-          <div>
-            <label for="name">नाम</label>
-            <input id="name" type="text" placeholder="अपना नाम" autocomplete="name" />
-          </div>
-          <div>
-            <label for="phone">मोबाइल नंबर</label>
-            <input id="phone" type="text" placeholder="मोबाइल" inputmode="numeric" autocomplete="tel" />
-          </div>
-          <div class="meta">
-            <button class="btn" id="startCam">कैमरा चालू करें</button>
-            <button class="btn alt" id="capture">फोटो कैप्चर</button>
-            <button class="btn dark" id="stopCam">कैमरा बंद</button>
-          </div>
-          <div>
-            <label for="file">या फाइल चुनें</label>
-            <input id="file" type="file" accept="image/*" />
-          </div>
-          <div class="meta">
-            <button class="btn" id="searchBtn">Search</button>
-            <span class="note">मिले: <b id="count">0</b></span>
-          </div>
-          <div id="msg" class="note"></div>
+        <div>
+          <label for="eventId">इवेंट चुनें</label>
+          <select id="eventId"></select>
         </div>
       </div>
     </section>
 
-    <section class="panel">
-      <div class="footer">
-        <span class="pill" id="multiToggle">Multiple select: OFF</span>
+    <!-- Capture/Upload -->
+    <section class="card">
+      <h3 style="margin:0 0 6px">अपनी फोटो ढूँढें (Selfie Search)</h3>
+      <div class="row grid-3" style="align-items:end">
         <div>
-          <button class="btn alt" id="clearBtn">साफ़ करें</button>
-          <button class="btn" id="downloadBtn">Download Selected (ZIP)</button>
+          <label for="name">नाम (optional)</label>
+          <input id="name" placeholder="नाम" />
+        </div>
+        <div>
+          <label for="phone">मोबाइल नंबर (optional)</label>
+          <input id="phone" placeholder="98xxxxxx" />
+        </div>
+        <div>
+          <button id="searchBtn">Search</button>
         </div>
       </div>
-      <div class="thumbs" id="resultsGrid">
-        <!-- thumbnails injected here -->
+
+      <div class="row grid-2" style="margin-top:10px">
+        <div>
+          <label>सेल्फी कैमरा</label>
+          <video id="cam" playsinline autoplay muted style="width:100%;max-height:260px;border-radius:10px;border:1px solid var(--border);background:#000"></video>
+          <div style="display:flex;gap:10px;margin-top:8px">
+            <button id="startCam">कैमरा चालू करें</button>
+            <button id="snap">फोटो कैप्चर</button>
+            <button id="stopCam" class="muted">कैमरा बंद</button>
+          </div>
+          <canvas id="shot" style="display:none"></canvas>
+        </div>
+        <div>
+          <label>या फाइल चुनें</label>
+          <input id="file" type="file" accept="image/*" />
+          <div class="muted" style="margin-top:6px">PNG/WebP → JPEG auto.</div>
+        </div>
       </div>
     </section>
+
+    <!-- Results + Selection -->
+    <section class="card">
+      <div class="toolbar" style="margin-bottom:8px">
+        <span id="msToggle" class="pill" style="background:#1e293b">Multiple select: <b id="msState">ON</b></span>
+        <span class="pill" id="selCount">Selected: 0</span>
+        <button id="selAll">Select All</button>
+        <button id="selClear">Clear</button>
+        <button id="downloadSel">Download Selected</button>
+      </div>
+      <div id="results" class="results"></div>
+      <div id="status" class="muted" style="margin-top:8px">कोई मैच नहीं मिला</div>
+    </section>
+
   </main>
 
-<script>
-// ====== CONFIG ======
-const API_BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2'; // your API stage
-const SEARCH_URL = API_BASE + '/search';
-const MAX_WIDTH = 1280; // client resize max
+  <script>
+    const $=(id)=>document.getElementById(id);
+    const state={ apiBase:'', multiple:true, selected:new Set(), results:[] };
 
-// ====== CAMERA ======
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const startBtn = document.getElementById('startCam');
-const stopBtn = document.getElementById('stopCam');
-const capBtn = document.getElementById('capture');
-const fileInput = document.getElementById('file');
-const searchBtn = document.getElementById('searchBtn');
-const msg = document.getElementById('msg');
-const countEl = document.getElementById('count');
-const grid = document.getElementById('resultsGrid');
-const multi = document.getElementById('multiToggle');
-const clearBtn = document.getElementById('clearBtn');
-const downloadBtn = document.getElementById('downloadBtn');
+    const safeJson=async (r)=>{ const t=await r.text(); try{return JSON.parse(t)}catch{return{_raw:t}}; };
+    const safeFetch=async(u,o={})=>fetch(u,o);
 
-let stream = null;
-let lastImageB64 = null;
-let multiSelect = false;
+    function build(base){ return {
+      events: base+'/admin/events',
+      search: base+'/search',
+      download: base+'/download'
+    };}
 
-startBtn.onclick = async () => {
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user' }, audio:false });
-    video.srcObject = stream;
-    msg.textContent = '';
-  }catch(e){ msg.textContent = 'कैमरा अनुमति नहीं मिली'; }
-};
+    function toast(x){ console.log(x); }
 
-stopBtn.onclick = () => {
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  video.srcObject = null;
-};
-
-capBtn.onclick = () => {
-  if(!video.videoWidth){ msg.textContent = 'कैमरा ऑन करें'; return; }
-  const {dataUrl} = drawAndResize(video);
-  lastImageB64 = dataUrl;
-  msg.textContent = 'फोटो कैप्चर हो गई';
-};
-
-fileInput.onchange = async e => {
-  const file = e.target.files[0]; if(!file) return;
-  const img = await readFileToImg(file);
-  const {dataUrl} = drawAndResize(img);
-  lastImageB64 = dataUrl;
-  msg.textContent = 'फाइल लोड हो गई';
-};
-
-function drawAndResize(source){
-  const iw = source.videoWidth || source.naturalWidth; const ih = source.videoHeight || source.naturalHeight;
-  const scale = Math.min(1, MAX_WIDTH/Math.max(iw, ih));
-  const w = Math.round(iw*scale), h = Math.round(ih*scale);
-  canvas.width = w; canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(source, 0, 0, w, h);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-  return {dataUrl,w,h};
-}
-
-function readFileToImg(file){
-  return new Promise((res,rej)=>{
-    const fr = new FileReader();
-    fr.onload = () => { const img = new Image(); img.onload=()=>res(img); img.src = fr.result; };
-    fr.onerror = rej; fr.readAsDataURL(file);
-  });
-}
-
-// ====== SEARCH ======
-searchBtn.onclick = async () => {
-  try{
-    msg.textContent = '';
-    if(!lastImageB64){
-      // if camera is on, capture instant frame
-      if(video.srcObject){ capBtn.click(); } else { msg.textContent='कृपया फोटो चुनें या कैमरा से कैप्चर करें'; return; }
+    function renderEvents(items){
+      const sel=$('eventId');
+      sel.innerHTML = items.length
+        ? items.map(e=>`<option value="${e.eventId||e}">${e.eventName||e}</option>`).join('')
+        : `<option value="">(no events)</option>`;
     }
-    const payload = { imageBase64: lastImageB64 };
-    const res = await fetch(SEARCH_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-    const data = await res.json();
-    window.__lastSearchResponse = data;
 
-    const items = normalize(data);
-    render(items);
-    countEl.textContent = items.length;
-    if(!items.length) msg.textContent = 'कोई मैच नहीं मिला';
-  }catch(err){
-    console.error(err); msg.innerHTML = '<span class="error">Internal Server Error</span>';
-  }
-};
+    async function loadEvents(){
+      if(!state.apiBase) return;
+      const r=await safeFetch(build(state.apiBase).events);
+      if(!r.ok) return;
+      const d=await safeJson(r);
+      const items=Array.isArray(d?.items)?d.items:(Array.isArray(d)?d:[]);
+      renderEvents(items);
+    }
 
-function normalize(data){
-  // prefer "results" then fallback to "matches"
-  let arr = [];
-  if(Array.isArray(data.results) && data.results.length){ arr = data.results; }
-  else if(Array.isArray(data.matches) && data.matches.length){
-    arr = data.matches.map(m=>({
-      imageUrl: m.imageUrl || m.url,
-      url: m.url || m.imageUrl,
-      photoId: m.photoId, eventId: m.eventId, similarity: m.similarity
-    }));
-  }
-  // filter items that actually have a url
-  arr = arr.filter(x => (x && (x.imageUrl || x.url)));
-  return arr;
-}
+    function updateSelUI(){
+      $('selCount').textContent=`Selected: ${state.selected.size}`;
+    }
 
-function render(items){
-  grid.innerHTML = '';
-  items.forEach((it,idx)=>{
-    const url = it.imageUrl || it.url;
-    const card = document.createElement('div'); card.className='card';
-    const img = document.createElement('img'); img.loading='lazy'; img.decoding='async'; img.alt= it.photoId || ('match-'+idx);
-    img.src = url;
-    card.appendChild(img);
-    // selection
-    card.onclick = () => card.classList.toggle('sel');
-    grid.appendChild(card);
-  });
-}
+    function imgCard(obj){
+      const url = obj.url || obj.imageUrl || obj.image || '';
+      const d = document.createElement('div');
+      d.className='photo';
+      d.dataset.u = url;
+      d.innerHTML = `<img loading="lazy" src="${url}"><div class="check">✓</div>`;
+      // click/tap toggle
+      d.addEventListener('click', ()=>{
+        if(!state.multiple && state.selected.size) state.selected.clear();
+        if(d.classList.toggle('selected')) state.selected.add(url);
+        else state.selected.delete(url);
+        updateSelUI();
+      });
+      return d;
+    }
 
-// ====== UI helpers ======
-multi.onclick = () => { multiSelect = !multiSelect; multi.textContent = `Multiple select: ${multiSelect? 'ON':'OFF'}`; };
-clearBtn.onclick = () => { grid.innerHTML=''; countEl.textContent='0'; msg.textContent=''; };
+    function renderResults(list){
+      const host=$('results'); host.innerHTML='';
+      list.forEach(x=>host.appendChild(imgCard(x)));
+      $('status').textContent=list.length?`मिले: ${list.length}`:'कोई मैच नहीं मिला';
+    }
 
-// basic ZIP (on-demand) — to keep light, trigger downloads one by one if multi selected
-// (You can wire JSZip if needed later.)
-downloadBtn.onclick = () => {
-  const imgs = grid.querySelectorAll('.card.sel img');
-  if(!imgs.length){ msg.textContent='पहले इमेज चुनें'; return; }
-  imgs.forEach((img,i)=>{ const a=document.createElement('a'); a.href=img.src; a.download = (img.alt||`photo-${i+1}`)+'.jpg'; document.body.appendChild(a); a.click(); a.remove(); });
-};
-</script>
+    async function jpegFromCanvas(canvas, q=0.92){
+      return new Promise(res=>canvas.toBlob(b=>res(new File([b],'selfie.jpg',{type:'image/jpeg'})),'image/jpeg',q));
+    }
+
+    // camera
+    let stream;
+    $('startCam').onclick=async ()=>{
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+        $('cam').srcObject=stream;
+      }catch(e){ toast('camera error'); }
+    };
+    $('stopCam').onclick=()=>{
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; $('cam').srcObject=null; }
+    };
+    $('snap').onclick=()=>{
+      if(!stream){ toast('camera off'); return; }
+      const v=$('cam'), c=$('shot');
+      c.width=v.videoWidth; c.height=v.videoHeight;
+      c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+      c.style.display='block';
+    };
+
+    // SEARCH
+    async function doSearch(){
+      if(!state.apiBase){ toast('सेव API URL'); return; }
+      const base=build(state.apiBase);
+      const ev=$('eventId').value;
+      let imgB64='';
+
+      // prefer canvas if snapped
+      const c=$('shot');
+      if(c.style.display==='block'){
+        const f=await jpegFromCanvas(c,0.9);
+        imgB64=await fileToBase64(f);
+      }else if($('file').files[0]){
+        const f=$('file').files[0];
+        imgB64=await fileToBase64(f);
+      }else{
+        toast('कृपया फोटो दें'); return;
+      }
+
+      const body={ eventId:ev, imageBase64:imgB64, name:$('name').value.trim(), phone:$('phone').value.trim() };
+      const r=await safeFetch(base.search,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const j=await safeJson(r);
+      const items = j?.matches || j?.results || j || [];
+      state.results = Array.isArray(items) ? items : [];
+      state.selected.clear();
+      renderResults(state.results);
+      updateSelUI();
+    }
+
+    async function fileToBase64(f){ const b=await f.arrayBuffer(); const u=new Uint8Array(b); let s=''; for (let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return 'data:'+f.type+';base64,'+btoa(s); }
+
+    // multi select toggle
+    $('msToggle').onclick=()=>{
+      state.multiple = !state.multiple;
+      $('msState').textContent = state.multiple?'ON':'OFF';
+      if(!state.multiple && state.selected.size>1){
+        // keep only one
+        const first=[...state.selected][0]; state.selected=new Set([first]);
+        // update DOM
+        document.querySelectorAll('.photo').forEach(p=>{
+          p.classList.toggle('selected', p.dataset.u===first);
+        });
+        updateSelUI();
+      }
+    };
+
+    $('selAll').onclick=()=>{
+      document.querySelectorAll('.photo').forEach(p=>{ p.classList.add('selected'); state.selected.add(p.dataset.u); });
+      updateSelUI();
+    };
+    $('selClear').onclick=()=>{
+      document.querySelectorAll('.photo').forEach(p=>p.classList.remove('selected'));
+      state.selected.clear(); updateSelUI();
+    };
+
+    // download
+    $('downloadSel').onclick=()=>{
+      if(!state.selected.size){ toast('कुछ select करें'); return; }
+      [...state.selected].forEach(u=>{
+        const a=document.createElement('a'); a.href=u; a.download='photo.jpg'; document.body.appendChild(a); a.click(); a.remove();
+      });
+    };
+
+    // base URL & events
+    $('saveApi').onclick=()=>{
+      const v=$('apiBase').value.trim();
+      if(!/^https?:\/\//i.test(v) || !v.includes('execute-api')){ toast('सही stage URL दें'); return; }
+      state.apiBase=v; localStorage.setItem('apiBase',v); loadEvents();
+    };
+
+    $('searchBtn').onclick=doSearch;
+
+    // boot
+    (function init(){
+      state.apiBase = localStorage.getItem('apiBase')||'';
+      $('apiBase').value = state.apiBase;
+      if(state.apiBase) loadEvents();
+    })();
+  </script>
 </body>
 </html>
