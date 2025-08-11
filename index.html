@@ -163,30 +163,48 @@ document.getElementById('doSearch').onclick = () => {
 async function runSearch(file){
   msg('Searching…'); clearGrid();
 
+  // PNG/WebP → JPEG (already in your file)
   const jpeg = await toJpeg(file);
-  const url = API_BASE + '/search';
-  const fd = new FormData();
-  fd.append('name',  document.getElementById('name').value||'');
-  fd.append('phone', document.getElementById('phone').value||'');
-  fd.append('file',  jpeg, 'selfie.jpg');
+
+  // NEW: make base64 and send JSON
+  const imageBase64 = await fileToBase64(jpeg); // "data:image/jpeg;base64,...."
+  const payload = {
+    name:  document.getElementById('name').value || '',
+    phone: document.getElementById('phone').value || '',
+    imageBase64 // backend expects either this or (s3Bucket+s3Key)
+  };
 
   let res;
-  try{ res = await fetch(url,{method:'POST',body:fd}); }
-  catch(e){ msg('नेटवर्क त्रुटि'); return; }
+  try{
+    res = await fetch(API_BASE + '/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }catch(e){
+    msg('नेटवर्क त्रुटि'); return;
+  }
 
   const txt = await res.text(); let data;
   try{ data = JSON.parse(txt); }catch{ data={_raw:txt}; }
 
-  if(!res.ok){ console.warn('search fail',data); msg('Search failed'); return; }
+  if(!res.ok){ console.warn('search fail', data); msg('Search failed'); return; }
 
-  const matches = Array.isArray(data.matches)? data.matches : [];
+  const matches = Array.isArray(data.matches) ? data.matches : [];
   if(!matches.length){ msg('कोई मैच नहीं मिला'); setCount(0); return; }
-  fillGrid(matches);
-  setCount(matches.length);
-  msg('मिले: ' + matches.length);
+  fillGrid(matches); setCount(matches.length); msg('मिले: '+matches.length);
 }
 
-function setCount(n){ document.getElementById('count').textContent = 'मिले: '+n; }
+// helper: file -> base64 dataURL
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);   // e.g. "data:image/jpeg;base64,...."
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
 
 /* ---------- Image helpers (PNG/WebP→JPEG) --------- */
 async function toJpeg(file,maxDim=1600,quality=0.92){
@@ -312,3 +330,4 @@ document.getElementById('btnDownload').onclick = async ()=>{
 </script>
 </body>
 </html>
+
