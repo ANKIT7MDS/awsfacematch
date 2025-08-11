@@ -52,11 +52,11 @@
   
   @media (max-width: 768px){
     #fileRow { display:none !important; }
-    #camOn, #camOff { display:none !important; }
+    
   }
 
   /* Hide camera ON/OFF buttons (keep only capture) */
-  #camOn, #camOff { display:none !important; }
+  
   @media (max-width: 768px){
     #fileRow { display:none !important; }
   }
@@ -508,6 +508,3 @@ function bestImageSrc(m){
 
 </body>
 </html>
-
-
-  window.addEventListener('focus', () => { if(video && !video.srcObject){ /* try */ });
