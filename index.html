@@ -9,7 +9,363 @@
       --brand:#ff8800; --ink:#222; --muted:#6b7280; --bg:#fff7ed; --card:#fffaf5; --err:#fee2e2; --ok:#dcfce7;
     }
     *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans",sans-serif}
-    body{margin:0;background:#fff}
+    body{margin:0;background:#fff}<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Face Search</title>
+  <style>
+    :root{ --brand:#ff8a00; --ink:#111; --muted:#777; --bg:#fff7ef; }
+    body{ font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; margin:0; background:#fff; color:var(--ink); }
+    header{ background:var(--brand); color:#fff; padding:.75rem 1rem; font-weight:700; }
+    .wrap{ max-width:980px; margin:0 auto; padding:1rem; }
+
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media (max-width:720px){ .grid{ grid-template-columns:1fr; } }
+
+    .card{ background:#fff; border:1px solid #eee; border-radius:10px; padding:12px; }
+    label{ display:block; font-size:.9rem; color:var(--muted); margin-bottom:6px; }
+    input[type=text],input[type=tel]{ width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:1rem; }
+    input[type=file]{ width:100%; }
+    .btn{ display:inline-block; background:var(--brand); color:#fff; border:0; padding:14px 18px; border-radius:10px; font-weight:700; cursor:pointer; }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+    .hint{ font-size:.9rem; color:#666; margin-top:8px; }
+
+    .videoBox{ position:relative; background:#000; border-radius:10px; overflow:hidden; }
+    video{ width:100%; height:auto; display:block; background:#000; }
+    .ghost{ display:none !important; }
+
+    .msg{ margin-top:10px; }
+    .ok{ background:#eafff2; border:1px solid #a6f0bf; padding:.75rem; border-radius:10px; }
+    .warn{ background:#fff7e6; border:1px solid #ffd18a; padding:.75rem; border-radius:10px; }
+    .err{ background:#fde4e4; border:1px solid #f6b3b3; padding:.75rem; border-radius:10px; }
+
+    .thumbs{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:12px; }
+    .thumb{ border:1px solid #eee; border-radius:8px; overflow:hidden; background:#fafafa; }
+    .thumb img{ width:100%; display:block; }
+    .meta{ padding:6px 8px; font-size:.85rem; color:#555; }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .grow{ flex:1 1 auto; }
+
+    /* मोबाइल पर file input छुपाने के लिए */
+    @media (max-width:640px){
+      .fileRow[data-hide-mobile="1"]{ display:none; }
+    }
+  </style>
+</head>
+<body>
+<header>Face Search</header>
+
+<main class="wrap">
+  <div class="grid">
+    <!-- Left: camera -->
+    <section class="card">
+      <div class="row">
+        <div class="grow">
+          <label>नाम (अनिवार्य)</label>
+          <input id="name" type="text" placeholder="आपका नाम" autocomplete="name" />
+        </div>
+        <div class="grow">
+          <label>मोबाइल नंबर (अनिवार्य)</label>
+          <input id="mobile" type="tel" inputmode="numeric" placeholder="10 अंकों का मोबाइल" autocomplete="tel" />
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="videoBox">
+        <video id="video" playsinline muted></video>
+      </div>
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button id="btnStartCam" class="btn" style="background:#444">कैमरा चालू करें</button>
+        <button id="btnSearch" class="btn grow">Search</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+
+      <div class="hint">
+        PNG/WebP → JPEG auto. * मोबाइल पर कैमरा अपने-आप खुलेगा (Allow दें)। फ़ाइल अपलोड की ज़रूरत नहीं।
+      </div>
+    </section>
+
+    <!-- Right: file upload (fallback / desktop) -->
+    <section class="card">
+      <div class="fileRow" id="fileRow" data-hide-mobile="1">
+        <label>या फ़ाइल चुनें</label>
+        <input id="fileInput" type="file" accept="image/*" capture="user" />
+      </div>
+
+      <div class="hint" style="margin-top:10px">
+        अगर कैमरा उपलब्ध नहीं है तो यहाँ से सेल्फ़ी चुनें। <br/>
+        URL पैरामीटर्स: <code>?e=eventId&sim=70&newtab=1&debug=1</code>
+      </div>
+
+      <div id="results" class="thumbs"></div>
+    </section>
+  </div>
+</main>
+
+<!-- hidden canvas for capture -->
+<canvas id="canvas" class="ghost"></canvas>
+
+<script>
+/* ===========================
+   CONFIG
+=========================== */
+const API_BASE   = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
+const SEARCH_URL = API_BASE + '/search';
+const DOWNLOAD_URL = API_BASE + '/download'; // /download?key=<s3Key>
+
+const urlParams = new URLSearchParams(location.search);
+const EVENT_ID  = (urlParams.get('e') || '').trim();
+const MIN_SIM   = Number(urlParams.get('sim') || 70);
+const NEWTAB    = urlParams.get('newtab') === '1';
+const DEBUG     = urlParams.get('debug') === '1';
+
+function log(...a){ if(DEBUG) console.log('[WM]', ...a); }
+
+/* ===========================
+   DOM
+=========================== */
+const $ = (s)=>document.querySelector(s);
+const nameEl = $('#name');
+const mobileEl = $('#mobile');
+const video = $('#video');
+const canvas = $('#canvas');
+const fileInput = $('#fileInput');
+const btnSearch = $('#btnSearch');
+const btnStartCam = $('#btnStartCam');
+const msgBox = $('#msg');
+const resultsBox = $('#results');
+
+/* ===========================
+   Camera
+=========================== */
+let currentStream = null;
+
+async function startCamera(){
+  try{
+    if(currentStream){ return; }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:720} },
+      audio:false
+    });
+    video.srcObject = stream;
+    currentStream = stream;
+    await video.play().catch(()=>{});
+    btnStartCam.style.display = 'none';
+    log('camera started');
+  }catch(e){
+    console.warn('camera error', e);
+    btnStartCam.style.display = 'inline-block';
+    if(msgBox) msgBox.innerHTML = `<div class="warn">कैमरा नहीं खुला। ऊपर “कैमरा चालू करें” दबाएँ या फ़ाइल से चुनें।</div>`;
+  }
+}
+
+function stopCamera(){
+  if(currentStream){
+    currentStream.getTracks().forEach(t=>t.stop());
+    currentStream = null;
+  }
+  video.srcObject = null;
+}
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible'){ startCamera(); }
+  else { /* बैकग्राउंड में resources बचाएँ */
+    // stopCamera(); // चाहें तो रोक दें
+  }
+});
+btnStartCam.addEventListener('click', startCamera);
+
+/* ===========================
+   Helpers
+=========================== */
+function validateForm(){
+  const n = (nameEl.value||'').trim();
+  const m = (mobileEl.value||'').replace(/\D/g,'').trim();
+  if(n.length < 2){
+    showMsg('कृपया नाम भरें।','err'); return false;
+  }
+  if(m.length !== 10){
+    showMsg('कृपया 10 अंकों का मोबाइल भरें।','err'); return false;
+  }
+  return { name:n, mobile:m };
+}
+function showMsg(html, cls='ok'){ msgBox.innerHTML = `<div class="${cls}">${html}</div>`; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+function fileToBase64(file){
+  return new Promise((res, rej)=>{
+    const fr = new FileReader();
+    fr.onerror = ()=>rej(fr.error||new Error('file read error'));
+    fr.onload = ()=>res(String(fr.result||'')); fr.readAsDataURL(file);
+  });
+}
+function canvasToJpegDataURL(c,q=0.9){ return c.toDataURL('image/jpeg', q); }
+function stripBase64(d){ return d.replace(/^data:image\/\w+;base64,/, ''); }
+
+/* Robust fetch + parse */
+async function fetchSmart(url, opts={}, retries=2){
+  try{
+    const r = await fetch(url, opts);
+    if(r.ok) return r;
+    if((r.status>=500 || r.status===429) && retries>0){
+      await new Promise(rz=>setTimeout(rz,(3-retries)*400));
+      return fetchSmart(url, opts, retries-1);
+    }
+    return r;
+  }catch(e){
+    if(retries>0){
+      await new Promise(rz=>setTimeout(rz,(3-retries)*400));
+      return fetchSmart(url, opts, retries-1);
+    }
+    throw e;
+  }
+}
+async function safeJson(resp){
+  const text = await resp.text();
+  try{ return { ok:true, json:JSON.parse(text), text }; }
+  catch{ return { ok:false, json:null, text }; }
+}
+
+/* ===========================
+   SEARCH
+=========================== */
+async function callSearch({ imageBase64, s3Bucket, s3Key, eventId, minSimilarity=MIN_SIM, maxResults=12 }){
+  const payload = { maxResults, minSimilarity };
+  if(eventId) payload.eventId = eventId;
+  if(imageBase64) payload.imageBase64 = imageBase64;
+  if(s3Bucket && s3Key){ payload.s3Bucket=s3Bucket; payload.s3Key=s3Key; }
+
+  log('payload', { ...payload, imageBase64:imageBase64?('len:'+imageBase64.length):undefined });
+
+  const resp = await fetchSmart(SEARCH_URL, {
+    method:'POST',
+    headers:{ 'content-type':'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const parsed = await safeJson(resp);
+
+  if(!resp.ok){
+    log('search non-ok', resp.status, parsed.text);
+    const err = new Error(`API ${resp.status}`);
+    err.status = resp.status; err.body = parsed.text;
+    throw err;
+  }
+  if(!parsed.ok){
+    log('bad json', parsed.text);
+    const err = new Error('Bad JSON from API'); err.status=200; err.body=parsed.text; throw err;
+  }
+  return parsed.json; // { matches: [...] }
+}
+
+async function doSearch(flow){
+  // image source
+  let imageBase64;
+  if(flow.canvas){
+    imageBase64 = stripBase64(canvasToJpegDataURL(flow.canvas, 0.9));
+  }else if(fileInput.files?.[0]){
+    const b64 = await fileToBase64(fileInput.files[0]);
+    imageBase64 = stripBase64(b64);
+  }else{
+    throw new Error('No image found');
+  }
+
+  // 1st: with event (if provided)
+  const withEvent = !!EVENT_ID;
+  try{
+    const r1 = await callSearch({ imageBase64, eventId: withEvent?EVENT_ID:undefined });
+    if(Array.isArray(r1.matches) && r1.matches.length>0){
+      return renderResults(r1.matches, { usedEvent: withEvent?EVENT_ID:undefined });
+    }
+    // Auto-retry without event (debug assist)
+    log('Retrying search without event… Provide imageBase64 or (s3Bucket + s3Key)');
+    const r2 = await callSearch({ imageBase64, eventId: undefined });
+    return renderResults(r2.matches||[], { usedEvent: undefined, retryNote: withEvent?`शायद URL में e=${EVENT_ID} गलत है?` : '' });
+  }catch(e){
+    renderError(e);
+  }
+}
+
+/* ===========================
+   RENDER
+=========================== */
+function getImageUrl(item){
+  // प्रायोरिटी: thumbUrl > s3Key via /download
+  if(item.thumbUrl) return item.thumbUrl;
+  const key = item.s3Key || item.key || '';
+  if(key) return `${DOWNLOAD_URL}?key=${encodeURIComponent(key)}`;
+  return '';
+}
+function renderError(err){
+  console.error('search error', err);
+  showMsg(
+    `<b>सर्विस में दिक्कत:</b> ${escapeHtml(err.message||err)}
+     ${err.status?`<div>HTTP: ${err.status}</div>`:''}
+     ${err.body?`<details style="margin-top:.5rem"><summary>एरर डीटेल्स</summary><pre style="white-space:pre-wrap">${escapeHtml(err.body)}</pre></details>`:''}`,
+    'err'
+  );
+}
+function renderResults(items, meta){
+  const n = (items||[]).length;
+  if(n===0){
+    showMsg(`Search Results (0) ${meta?.usedEvent?`(event: ${meta.usedEvent})`:''}${meta?.retryNote?`<div>${meta.retryNote}</div>`:''}`,'warn');
+    resultsBox.innerHTML = '';
+    return;
+  }
+  showMsg(`मिले ${n} फोटो ${meta?.usedEvent?`(event: ${meta.usedEvent})`:''}.`, 'ok');
+
+  // open in new tab if asked
+  if(NEWTAB){
+    const ids = items.map(x=>encodeURIComponent(x.s3Key||x.key||x.photoId||'')).filter(Boolean).join(',');
+    const url = `/results.html?items=${ids}`;
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+
+  // inline thumbnails
+  const html = items.map(it=>{
+    const u = getImageUrl(it);
+    const cap = [
+      it.photoId ? `ID: ${escapeHtml(it.photoId)}` : '',
+      it.similarity!=null ? `~${Math.round(Number(it.similarity))}%` : ''
+    ].filter(Boolean).join(' • ');
+    const dl = u ? `<a href="${u}" target="_blank" rel="noopener" style="text-decoration:none">डाउनलोड ⤓</a>` : '';
+    return `<div class="thumb">
+      ${u?`<img loading="lazy" src="${u}" alt="">`:`<div style="padding:40px;text-align:center;color:#888">No preview</div>`}
+      <div class="meta">${cap} ${dl?` &nbsp; ${dl}`:''}</div>
+    </div>`;
+  }).join('');
+  resultsBox.innerHTML = html;
+}
+
+/* ===========================
+   Wire-up
+=========================== */
+btnSearch.addEventListener('click', async ()=>{
+  const ok = validateForm(); if(!ok) return;
+  try{
+    // capture current video frame to canvas (if playing)
+    if(video && video.srcObject){
+      const w = video.videoWidth || 640, h = video.videoHeight || 480;
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(video, 0, 0, w, h);
+    }
+    showMsg('खोज रहे हैं…','ok');
+    await doSearch({ canvas });
+  }catch(e){ renderError(e); }
+});
+
+// Try camera on load
+document.addEventListener('DOMContentLoaded', ()=>{
+  // मोबाइल पर कैमरा auto-start; iOS Safari में gesture की जरूरत पड़ सकती—fallback बटन रहेगा
+  startCamera();
+});
+</script>
+</body>
+</html>
+
     header{background:var(--brand);color:#000;font-weight:700;padding:10px 16px}
     .wrap{max-width:980px;margin:0 auto;padding:16px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
