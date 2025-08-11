@@ -88,6 +88,7 @@
       <div>
         <label>सेल्फी कैमरा</label>
         <video id="video" autoplay muted playsinline></video>
+        <div id="camError" style="font-size:13px;color:#b00020;margin-top:6px;display:none"></div>
         <div class="actions" style="margin-top:8px">
           <button class="btn" id="camOn">कैमरा चालू करें</button>
           <button class="btn ghost" id="snap">फोटो कैप्चर</button>
@@ -132,28 +133,45 @@
   // === Helpers ===
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   async function startCamera(){
-    try{
-      const constraints = { video: { facingMode: 'user' }, audio: false };
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      // iOS/Safari quirks
-      video.setAttribute('playsinline','true');
-      video.setAttribute('muted','true');
-      video.muted = true;
-      video.srcObject = stream;
-      await video.play().catch(()=>{});
-      // Hide/Show camera buttons if present
-      const on=document.getElementById('camOn'), off=document.getElementById('camOff');
-      if(on) on.style.display='none';
-      if(off) off.style.display='inline-block';
-      return true;
-    }catch(e){
-      console.warn('camera start fail', e);
-      const on=document.getElementById('camOn'), off=document.getElementById('camOff');
-      if(on) on.style.display='inline-block';
-      if(off) off.style.display='none';
-      throw e;
+  // Polyfill & constraints
+  const getUM = (constraints)=>{
+    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+      return navigator.mediaDevices.getUserMedia(constraints);
     }
-  } });
+    const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    return new Promise((resolve,reject)=>{
+      if(!legacy) return reject(new Error('getUserMedia not supported on this browser'));
+      legacy.call(navigator, constraints, resolve, reject);
+    });
+  };
+  try{
+    let constraints = { video: { facingMode: 'user' }, audio: false };
+    let s = await getUM(constraints).catch(()=>null);
+    if(!s){ // fallback for desktop/older cams
+      constraints = { video: true, audio: false };
+      s = await getUM(constraints);
+    }
+    stream = s;
+    // Prepare video element
+    video.setAttribute('playsinline','true');
+    video.setAttribute('muted','true');
+    video.muted = true;
+    video.srcObject = stream;
+    await video.play().catch(()=>{});
+    const on=document.getElementById('camOn'), off=document.getElementById('camOff');
+    if(on) on.style.display='none';
+    if(off) off.style.display='inline-block';
+    camErr(''); document.getElementById('camError').style.display='none';
+    return true;
+  }catch(e){
+    console.warn('camera start fail', e);
+    camErr('कैमरा नहीं खुल पा रहा: ' + (e.message||e.name||e));
+    const on=document.getElementById('camOn'), off=document.getElementById('camOff');
+    if(on) on.style.display='inline-block';
+    if(off) off.style.display='none';
+    throw e;
+  }
+} });
       video.srcObject = stream;
       return true;
     }catch(e){
@@ -174,7 +192,9 @@
   }
   window.addEventListener('load', autoStartCameraIfMobile);
 
-// === Confirm Modal & Searching Overlay ===
+function camErr(msg){ try{ const e=document.getElementById('camError'); e.style.display='block'; e.textContent=msg; }catch(_){} }
+
+  // === Confirm Modal & Searching Overlay ===
 const confirmModal = document.getElementById('confirmModal');
 const confirmImg   = document.getElementById('confirmImg');
 const btnRetake    = document.getElementById('btnRetake');
@@ -488,3 +508,6 @@ function bestImageSrc(m){
 
 </body>
 </html>
+
+
+  window.addEventListener('focus', () => { if(video && !video.srcObject){ /* try */ });

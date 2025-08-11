@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Camera Debug</title>
+<style>
+body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:14px}
+button{padding:10px 14px;border:0;border-radius:8px;background:#ff8800;color:#fff;font-weight:700}
+#log{white-space:pre-wrap;background:#111;color:#0f0;padding:10px;border-radius:8px;margin-top:10px;max-height:40vh;overflow:auto}
+video{width:100%;max-width:420px;background:#000;border-radius:12px}
+</style>
+</head>
+<body>
+<h2>Camera Debug</h2>
+<video id="v" autoplay playsinline muted></video><br/><br/>
+<button id="start">Start Camera</button>
+<div id="log"></div>
+<script>
+const v=document.getElementById('v'), logEl=document.getElementById('log');
+const log=(...a)=>{ logEl.textContent += a.join(' ') + "\n"; console.log(...a); };
+log('navigator.mediaDevices?', !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia));
+log('platform:', navigator.platform, 'ua:', navigator.userAgent);
+
+async function start(){
+  const gUM = (c)=>{
+    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) return navigator.mediaDevices.getUserMedia(c);
+    const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    return new Promise((res,rej)=>{
+      if(!legacy) return rej(new Error('getUserMedia not supported'));
+      legacy.call(navigator,c,res,rej);
+    });
+  };
+  try{
+    let s = await gUM({video:{facingMode:'user'}, audio:false}).catch(e=>{log('user facing fail', e.name, e.message); return null;});
+    if(!s){ s = await gUM({video:true, audio:false}); }
+    v.setAttribute('playsinline','true'); v.muted=true; v.srcObject=s; await v.play().catch(()=>{});
+    log('STREAM OK:', !!s);
+  }catch(e){
+    log('ERROR:', e.name, e.message);
+  }
+}
+document.getElementById('start').onclick = start;
+</script>
+</body>
+</html>
