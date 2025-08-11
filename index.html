@@ -132,9 +132,8 @@
     c.toBlob(b=>{
       const f=new File([b],'selfie.jpg',{type:'image/jpeg'});
       window.__lastCaptureFile = f; // store for manual search
-      const fi = document.getElementById('file');
-      // put into file input via DataTransfer so user sees selected
-      const dt = new DataTransfer(); dt.items.add(f); fi.files = dt.files;
+      const fi=document.getElementById('file');
+      const dt=new DataTransfer(); dt.items.add(f); fi.files=dt.files;
       setMsg('सेल्फी कैप्चर हो गई — अब "Search" दबाएँ');
     },'image/jpeg',0.92);
   };
@@ -228,20 +227,19 @@
 
   // helper: best image src with proxy-first
   
-  function bestImageSrc(m) {
-    const keyFromUrl = (u) => {
-      try { const p = new URL(u).pathname; return decodeURIComponent(p.replace(/^\/+/,'').replace(/^%2F/gi,'')); } catch { return ''; }
-    };
-    const key = m.s3Key || m.s3key || keyFromUrl(m.s3url || m.url || '');
-    const direct = m.signedUrl || m.imageUrl || m.s3url || m.url || '';
-    if (key) return `${API_BASE}/download?key=${encodeURIComponent(key)}&t=${Date.now()}`;
-    if (direct && /X-Amz-Signature=/.test(String(direct))) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
-    return '';
-  }
-/download?key=${encodeURIComponent(key)}&t=${Date.now()}`;
-    if (direct) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
-    return '';
-  }
+function bestImageSrc(m) {
+  const keyFromUrl = (u) => {
+    try {
+      const path = decodeURIComponent(new URL(u).pathname);
+      return path.startsWith('/') ? path.slice(1) : path;
+    } catch { return ''; }
+  };
+  const key = m.s3Key || m.s3key || keyFromUrl(m.s3url || m.url || '');
+  const direct = m.signedUrl || m.imageUrl || m.s3url || m.url || '';
+  if (key) return `${API_BASE}/download?key=${encodeURIComponent(key)}&t=${Date.now()}`;
+  if (direct) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
+  return '';
+}
 
   function fillGrid(matches){
     grid.innerHTML = '';
@@ -265,7 +263,7 @@
 
       img.onerror = () => {
         const usedProxy = primary.startsWith(API_BASE + '/download');
-        const key2 = m.s3Key || m.photoId || m.key || '';
+        const key2 = m.s3Key || m.s3key || (function(){ try{ const p=decodeURIComponent(new URL(m.s3url||m.url||'').pathname); return p.startsWith('/')?p.slice(1):p; }catch(e){ return ''; } })();
         const direct2 = m.imageUrl || m.signedUrl || m.url || '';
         if (usedProxy && direct2) {
           primary = `${direct2}${direct2.includes('?') ? '&' : '?'}t=${Date.now()}`;
