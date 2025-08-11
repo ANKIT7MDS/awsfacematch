@@ -138,7 +138,7 @@
   }
   function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; video.srcObject=null; } }
   async function autoStartCameraIfMobile(){
-    if(!isMobile) return;
+    if(!isMobile) hideSearching(); return;
     try{ await startCamera(); }catch(e){
       const overlay=document.createElement('div');
       overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
@@ -149,6 +149,29 @@
   }
   window.addEventListener('load', autoStartCameraIfMobile);
 
+// === Confirm Modal & Searching Overlay ===
+const confirmModal = document.getElementById('confirmModal');
+const confirmImg   = document.getElementById('confirmImg');
+const btnRetake    = document.getElementById('btnRetake');
+const btnDone      = document.getElementById('btnDone');
+const searchingLay = document.getElementById('searchingOverlay');
+
+function showModal(){ confirmModal.style.display='flex'; }
+function hideModal(){ confirmModal.style.display='none'; }
+function showSearching(){ searchingLay.style.display='flex'; }
+function hideSearching(){ searchingLay.style.display='none'; }
+
+btnRetake?.addEventListener('click', ()=>{ hideModal(); setMsg('दोबारा सेल्फी लें'); });
+btnDone?.addEventListener('click', ()=>{
+  if(window.__pendingCaptureFile){
+    window.__lastCaptureFile = window.__pendingCaptureFile;
+    const dt = new DataTransfer(); dt.items.add(window.__lastCaptureFile);
+    document.getElementById('file').files = dt.files;
+    hideModal();
+    document.getElementById('doSearch').click(); // auto-run search after confirm
+  }
+});
+
   // ------------ CAMERA ------------
   const video = document.getElementById('video');
   let stream;
@@ -156,29 +179,38 @@
   document.getElementById('camOn').onclick = async ()=>{ try{ await startCamera(); }catch(e){ alert('कैमरा उपलब्ध नहीं: '+e.message); } };
   document.getElementById('camOff').onclick = ()=>{ stopCamera(); };
   document.getElementById('snap').onclick = async () => {
-    if(!video.srcObject){ try{ await startCamera(); }catch(e){ alert('कैमरा उपलब्ध नहीं: '+e.message); return; } }
-    const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight;
-    c.getContext('2d').drawImage(video,0,0);
-    c.toBlob(b=>{
-      const f=new File([b],'selfie.jpg',{type:'image/jpeg'});
-      window.__lastCaptureFile=f; const dt=new DataTransfer(); dt.items.add(f); document.getElementById('file').files=dt.files; setMsg('सेल्फी कैप्चर हो गई — अब "Search" दबाएँ');
-    },'image/jpeg',0.92);
-  };
+  if(!video.srcObject){
+    try{ await startCamera(); }
+    catch(e){ alert('कैमरा उपलब्ध नहीं: '+e.message); return; }
+  }
+  const c=document.createElement('canvas');
+  c.width=video.videoWidth; c.height=video.videoHeight;
+  const ctx=c.getContext('2d'); ctx.drawImage(video,0,0);
+  const dataURL=c.toDataURL('image/jpeg',0.92);
+  c.toBlob(b=>{
+    const f=new File([b],'selfie.jpg',{type:'image/jpeg'});
+    window.__pendingCaptureFile = f;
+    if(typeof confirmImg!=='undefined'){ confirmImg.src=dataURL; }
+    if(typeof showModal==='function'){ showModal(); }
+    setMsg('सेल्फी कैप्चर की जाँच करें');
+  },'image/jpeg',0.92);
+};
 
   // ------------ SEARCH ------------
   document.getElementById('doSearch').onclick = () => {
-    if(!document.getElementById('name').value.trim()){ alert('कृपया नाम दर्ज करें'); document.getElementById('name').focus(); return; }
+    if(!document.getElementById('name').value.trim()){ alert('कृपया नाम दर्ज करें'); document.getElementById('name').focus(); hideSearching(); return; }
     const ph = document.getElementById('phone');
-    if(!/^\d{10}$/.test(ph.value.trim())){ alert('कृपया 10 अंकों का मोबाइल नंबर दर्ज करें'); ph.focus(); return; }
+    if(!/^\d{10}$/.test(ph.value.trim())){ alert('कृपया 10 अंकों का मोबाइल नंबर दर्ज करें'); ph.focus(); hideSearching(); return; }
     let f = document.getElementById('file').files?.[0];
     if(!f && window.__lastCaptureFile) f = window.__lastCaptureFile;
-    if(!f){ alert('कृपया selfie upload करें या कैमरा से कैप्चर करें'); return; }
+    if(!f){ alert('कृपया selfie upload करें या कैमरा से कैप्चर करें'); hideSearching(); return; }
     runSearch(f);
   };
 
-  async function runSearch(file){
+  async function runSearch(file){ showSearching();
     setMsg('Searching...');
     clearGrid();
+    showSearching();
 
     try{
       const jpeg = await toJpeg(file);
@@ -202,14 +234,14 @@
       if(!res.ok){
         console.warn('search fail', data);
         setMsg(data?.message || 'Search failed');
-        return;
+        hideSearching(); return;
       }
 
       const matches = data.matches || [];
-      if(!matches.length){ setMsg('कोई मैच नहीं मिला'); setFound(0); return; }
+      if(!matches.length){ setMsg('कोई मैच नहीं मिला'); setFound(0); hideSearching(); return; }
 
       __allMatches = matches; __pageIndex = 0; renderPage();
-      setMsg('मिले फोटो तैयार हैं');
+      setMsg('मिले फोटो तैयार हैं'); hideSearching();
     }catch(e){
       console.error(e);
       setMsg('नेटवर्क/प्रोसेस त्रुटि');
@@ -311,6 +343,7 @@ function bestImageSrc(m){
       img.crossOrigin = 'anonymous';
       let primary = bestImageSrc(m);
       img.src = primary; img.style.cursor='pointer'; img.onclick = ()=> window.open(primary, '_blank');
+    const dl = document.createElement('a'); dl.href=primary; dl.target='_blank'; dl.title='Download'; dl.style.cssText='position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:10px;padding:6px 8px;font-size:12px;text-decoration:none'; dl.textContent='⇩'; card.style.position='relative'; card.appendChild(dl);
 
       img.onerror = () => {
         const usedProxy = primary.startsWith(API_BASE + '/download');
@@ -319,9 +352,11 @@ function bestImageSrc(m){
         if (usedProxy && direct2) {
           primary = `${direct2}${direct2.includes('?') ? '&' : '?'}t=${Date.now()}`;
           img.src = primary; img.style.cursor='pointer'; img.onclick = ()=> window.open(primary, '_blank');
+    const dl = document.createElement('a'); dl.href=primary; dl.target='_blank'; dl.title='Download'; dl.style.cssText='position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:10px;padding:6px 8px;font-size:12px;text-decoration:none'; dl.textContent='⇩'; card.style.position='relative'; card.appendChild(dl);
         } else if (!usedProxy && key2) {
           primary = `${API_BASE}/download?key=${encodeURIComponent(key2)}&t=${Date.now()}`;
           img.src = primary; img.style.cursor='pointer'; img.onclick = ()=> window.open(primary, '_blank');
+    const dl = document.createElement('a'); dl.href=primary; dl.target='_blank'; dl.title='Download'; dl.style.cssText='position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:10px;padding:6px 8px;font-size:12px;text-decoration:none'; dl.textContent='⇩'; card.style.position='relative'; card.appendChild(dl);
         } else {
           img.onerror = null;
           img.src =
@@ -357,7 +392,7 @@ function bestImageSrc(m){
   document.getElementById('btnDownload').onclick = async ()=>{
     const picks = [...grid.querySelectorAll('.thumb')]
       .filter(t=>t.querySelector('input').checked);
-    if(!picks.length){ alert('कोई फ़ोटो select नहीं है'); return; }
+    if(!picks.length){ alert('कोई फ़ोटो select नहीं है'); hideSearching(); return; }
 
     setMsg('Preparing ZIP…');
     const zip = new JSZip(); let done = 0;
@@ -382,5 +417,34 @@ function bestImageSrc(m){
     setMsg(`ZIP ready (${picks.length} files)`);
   };
 </script>
+
+<!-- Confirm Selfie Modal -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#111;color:#fff;border-radius:16px;padding:18px;max-width:360px;width:92%;box-shadow:0 10px 30px rgba(0,0,0,.35)">
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <span style="display:inline-flex;width:26px;height:26px;border-radius:50%;background:#22c55e;align-items:center;justify-content:center">✔</span>
+      Selfie Preview
+    </div>
+    <img id="confirmImg" alt="selfie preview" style="width:100%;border-radius:12px;display:block;margin:6px 0 10px 0;"/>
+    <div style="display:flex;gap:10px;justify-content:space-between">
+      <button id="btnRetake" class="btn" style="background:#374151">Retake</button>
+      <button id="btnDone" class="btn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Searching Overlay -->
+<div id="searchingOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(255,255,255,.93);backdrop-filter:blur(2px);align-items:center;justify-content:center;text-align:center">
+  <div>
+    <div class="spinner" style="width:52px;height:52px;border:4px solid #ddd;border-top-color:#f59e0b;border-radius:50%;margin:0 auto 12px;animation:spin 1s linear infinite"></div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:6px">Searching your Photos</div>
+    <div style="font-size:13px;color:#555">कृपया प्रतीक्षा करें…</div>
+  </div>
+</div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
 </body>
 </html>
