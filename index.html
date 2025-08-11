@@ -5,14 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>भारतीय जनता पार्टी — मंदसौर (Face Search)</title>
   <style>
-    :root{
-      --brand:#ff8500;
-      --brand-dark:#e67300;
-      --muted:#f8efe6;
-      --danger:#e74c3c;
-      --ok:#1e9f54;
-      --ink:#222;
-    }
+    :root{ --brand:#ff8500; --brand-dark:#e67300; --muted:#f8efe6; --danger:#e74c3c; --ok:#1e9f54; --ink:#222 }
     html,body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#fff7f0;color:var(--ink)}
     header{background:var(--brand);color:#111;padding:12px 16px;font-weight:700}
     .wrap{max-width:1100px;margin:20px auto;padding:0 16px}
@@ -27,18 +20,15 @@
     .btn{appearance:none;border:0;border-radius:12px;background:var(--brand);color:#111;font-weight:700;padding:12px 18px;cursor:pointer}
     .btn:disabled{opacity:.6;cursor:not-allowed}
     .btn.secondary{background:#111;color:#fff}
-    .btn.danger{background:var(--danger);color:#fff}
     .status{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--muted);border:1px dashed #f1d3bc;color:#5a473a}
     .status.error{background:#fff0ef;border-color:#f3b7b0;color:#7c2d25}
     .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#ecfff4;color:#0c6b3b;font-size:13px;border:1px solid #b6e9cc}
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
     .footer-note{margin-top:10px;font-size:13px;color:#666}
     .hidden{display:none !important}
-    /* Hide file upload on small screens */
-    @media (max-width: 768px){
-      .file-block{display:none}
-      .grid{grid-template-columns:1fr}
-    }
+    .center{display:flex;align-items:center;justify-content:center}
+    details summary{cursor:pointer;font-weight:600}
+    pre{white-space:pre-wrap}
+    @media (max-width:768px){ .file-block{display:none} .grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -59,7 +49,7 @@
             <video id="video" playsinline muted></video>
             <canvas id="canvas" width="1280" height="960"></canvas>
           </div>
-          <div class="actions" style="margin-top:12px">
+          <div class="row" style="margin-top:12px">
             <button id="btnTake" type="button" class="btn">सेल्फ़ी लें</button>
             <button id="btnRetake" type="button" class="btn secondary">दोबारा लें</button>
             <span id="selfieOk" class="pill hidden">सेल्फ़ी तैयार ✓</span>
@@ -81,56 +71,66 @@
           </div>
 
           <div style="height:14px"></div>
-          <button id="btnSearch" type="button" class="btn" style="width:100%">Search</button>
+          <button id="btnSearch" type="button" class="btn" style="width:100%"><span class="label">Search</span><span class="hidden" id="spnBusy" aria-hidden="true" style="margin-left:8px">…</span></button>
 
           <div id="msg" class="status" style="display:none"></div>
           <div id="hardErr" class="status error" style="display:none"></div>
+          <details id="errDetails" class="hidden"><summary>एरर डीटेल्स</summary><pre id="errDump"></pre></details>
           <p class="footer-note">सर्च परिणाम नए टैब में खुलेंगे।</p>
         </div>
       </div>
     </section>
+
+    <!-- Dev quick-tests (open with #test) -->
+    <pre id="tests" class="status hidden"></pre>
   </main>
 
   <script>
   // ======= Config =======
   const API_BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
   const OPEN_IN_NEW_TAB = true;
+  const REQUEST_TIMEOUT_MS = 25000; // 25s
 
   // ======= State =======
-  let stream = null;          // MediaStream
-  let selfieFile = null;      // File captured / chosen
+  let stream = null;      // MediaStream
+  let selfieFile = null;  // File captured / chosen
   let searching = false;
 
   // ======= Helpers =======
   const $ = sel => document.querySelector(sel);
-  const show = (el, txt='') => { el.style.display='block'; if (txt) el.textContent = txt; };
-  const hide = el => el.style.display='none';
+  const show = (el, txt='') => { el.style.display='block'; if (txt!==undefined) el.textContent = txt; };
+  const hide = el => { el.style.display='none'; };
 
-  function isValidMobile(ms){
-    return /^[0-9]{10}$/.test(String(ms||'').trim());
-  }
+  function isValidMobile(ms){ return /^[0-9]{10}$/.test(String(ms||'').trim()); }
 
   function toast(msg, kind='info'){
     const b = $('#msg');
     b.classList.toggle('error', kind==='error');
     show(b, msg);
-    setTimeout(()=>hide(b), 3500);
+    clearTimeout(b._t);
+    b._t = setTimeout(()=>hide(b), 4000);
   }
 
   async function fileToBase64(file){
     const dataUrl = await new Promise((res, rej) => {
       const r = new FileReader();
       r.onload = () => res(r.result);
-      r.onerror = rej;
+      r.onerror = () => rej(new Error('file-read-failed'));
       r.readAsDataURL(file);
     });
-    // return only base64, strip `data:*;base64,`
-    return String(dataUrl).split(',')[1];
+    // Return *both*: plain base64 and dataURL (some backends expect prefix)
+    const parts = String(dataUrl).split(',');
+    return { base64: parts[1], dataUrl: String(dataUrl) };
   }
 
   function enableSearchIfReady(){
     const ok = ($('#name').value.trim().length>0) && isValidMobile($('#mobile').value) && !!selfieFile && !searching;
     $('#btnSearch').disabled = !ok;
+  }
+
+  function setBusy(b){
+    searching = b; enableSearchIfReady();
+    $('#spnBusy').classList.toggle('hidden', !b);
   }
 
   // ======= Camera =======
@@ -140,10 +140,10 @@
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user' }, audio:false });
       const video = $('#video');
       video.srcObject = stream;
-      await video.play();
+      await video.play().catch(()=>{}); // mobile Safari often throws AbortError; safe to ignore
       hide($('#camMsg'));
     }catch(err){
-      console.error('camera error', err);
+      console.warn('camera error', err);
       show($('#camMsg'), 'कैमरा परमिशन नहीं मिली। कृपया Allow दें या फ़ाइल चुनें।');
     }
   }
@@ -152,12 +152,10 @@
     const video = $('#video');
     const canvas = $('#canvas');
     const ctx = canvas.getContext('2d');
-    // draw current frame
     const w = video.videoWidth || 1280;
     const h = video.videoHeight || 960;
     canvas.width = w; canvas.height = h;
     ctx.drawImage(video, 0, 0, w, h);
-    // convert to JPEG file
     const dataURL = canvas.toDataURL('image/jpeg', 0.9);
     const bin = atob(dataURL.split(',')[1]);
     const arr = new Uint8Array(bin.length);
@@ -173,31 +171,59 @@
     enableSearchIfReady();
   }
 
-  // ======= API (with auto-fallback) =======
-  async function callSearch(name, mobile, file){
-    // try JSON first (image base64), then multipart fallback
-    const payload = { name, mobile };
+  // ======= Robust fetch helpers =======
+  const jsonTry = txt => { try{ return JSON.parse(txt); }catch{ return null; } };
+
+  async function readBodySmart(resp){
+    let text = '';
+    try{ text = await resp.text(); }catch{ text = ''; }
+    const asJson = jsonTry(text);
+    return asJson!==null ? asJson : text;
+  }
+
+  function httpErrorMessage(err){
+    if (err.name === 'AbortError') return 'रिक्वेस्ट का समय खत्म हो गया। थोड़ी देर बाद पुनः प्रयास करें।';
+    if (String(err).includes('Failed to fetch')) return 'नेटवर्क/ब्राउज़र समस्या। बाद में फिर प्रयास करें।';
+    return err.message || String(err);
+  }
+
+  async function fetchSmart(url, opts){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), REQUEST_TIMEOUT_MS);
     try{
-      const b64 = await fileToBase64(file);
-      const r = await fetch(API_BASE + '/search', {
-        method:'POST',
-        headers:{ 'content-type':'application/json' },
-        body: JSON.stringify({ ...payload, image: b64 })
-      });
-      if(r.ok) return await r.json();
-      // fallback to multipart
-      const fd = new FormData();
-      fd.append('name', name);
-      fd.append('mobile', mobile);
-      fd.append('file', file, file.name||'selfie.jpg');
-      const r2 = await fetch(API_BASE + '/search', { method:'POST', body: fd });
-      if(!r2.ok){
-        let errTxt = await r2.text();
-        throw new Error('API ' + r2.status + ': ' + errTxt);
+      const r = await fetch(url, { mode:'cors', ...opts, signal: ctrl.signal });
+      const body = await readBodySmart(r);
+      if(!r.ok){
+        const detail = typeof body === 'string' ? body.slice(0,400) : body;
+        const e = new Error(`API ${r.status}`);
+        e.status = r.status; e.body = detail; e.url = url; throw e;
       }
-      return await r2.json();
-    }catch(e){
-      throw e;
+      return body;
+    } finally { clearTimeout(t); }
+  }
+
+  // ======= API (JSON only; retry with dataURL if backend rejects) =======
+  async function callSearch(name, mobile, file){
+    const { base64, dataUrl } = await fileToBase64(file);
+
+    const common = { method:'POST', headers:{ 'accept':'application/json', 'content-type':'application/json' } };
+
+    // Attempt 1: send plain base64 (preferred)
+    try{
+      return await fetchSmart(API_BASE + '/search', {
+        ...common,
+        body: JSON.stringify({ name, mobile, image: base64 })
+      });
+    }catch(err){
+      // Some backends expect full dataURL string inside JSON.
+      const msg = (err && (err.body?.message || err.message)) || '';
+      const looksLikeParseErr = /Unexpected token|JSON at position/i.test(String(msg)) || err.status>=400;
+      if(!looksLikeParseErr) throw err;
+      console.warn('Retrying search with dataURL image…', msg);
+      return await fetchSmart(API_BASE + '/search', {
+        ...common,
+        body: JSON.stringify({ name, mobile, image: dataUrl })
+      });
     }
   }
 
@@ -209,6 +235,7 @@
       <style>body{font-family:system-ui;padding:16px;background:#fff} .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px} img{width:100%;height:220px;object-fit:cover;border-radius:10px;background:#eee} .meta{font:12px/1.3 system-ui;color:#555;margin-top:4px} a.dl{display:inline-block;margin-top:6px;font-weight:600}</style>
     </head><body>`);
     w.document.write(`<h2>मिले फोटो: ${photos.length}</h2>`);
+    if(!photos.length){ w.document.write('<p>कोई फोटो नहीं मिला।</p>'); }
     w.document.write('<div class="grid">');
     photos.forEach(p=>{
       const t = p?.thumbUrl || p?.thumb || p?.url || '';
@@ -217,6 +244,16 @@
     });
     w.document.write('</div></body></html>');
     w.document.close();
+  }
+
+  function showErrorDetails(err){
+    try{
+      const det = $('#errDetails');
+      const dump = $('#errDump');
+      const obj = {message: err.message, status: err.status, url: err.url, body: err.body};
+      dump.textContent = JSON.stringify(obj, null, 2);
+      det.classList.remove('hidden');
+    }catch{ /* noop */ }
   }
 
   async function doSearch(){
@@ -228,23 +265,32 @@
     if(!selfieFile && $('#file').files[0]) selfieFile = $('#file').files[0];
     if(!selfieFile){ toast('पहले सेल्फ़ी लें या फ़ाइल चुनें','error'); return; }
 
-    searching = true; enableSearchIfReady(); hide($('#hardErr'));
+    setBusy(true); hide($('#hardErr')); $('#errDetails').classList.add('hidden');
     try{
       const resp = await callSearch(name, mobile, selfieFile);
       console.log('search resp', resp);
+
+      if(typeof resp !== 'object' || resp === null){
+        throw new Error('Invalid response (non‑JSON) प्राप्त हुआ');
+      }
+      if(resp.error){
+        const e = new Error(resp.message || resp.error);
+        e.body = resp; throw e;
+      }
+
       toast('सर्च सफल, नये टैब में खुल रहा है…');
       if(OPEN_IN_NEW_TAB) renderResultsNewTab(resp);
     }catch(err){
       console.error('search error', err);
-      show($('#hardErr'), 'सर्व में दिक्कत: ' + (err?.message||'API'));
-    }finally{
-      searching = false; enableSearchIfReady();
-    }
+      const msg = httpErrorMessage(err).replace(/</g,'&lt;').slice(0,400);
+      show($('#hardErr'), 'सर्व में दिक्कत: ' + msg);
+      showErrorDetails(err);
+    }finally{ setBusy(false); }
   }
 
   // ======= Wire-up =======
   document.addEventListener('DOMContentLoaded', () => {
-    // try to open camera on load + on focus
+    // camera on load + on focus
     if(navigator.mediaDevices?.getUserMedia){
       openCamera();
       window.addEventListener('focus', ()=>{ if(!stream) openCamera(); });
@@ -262,6 +308,17 @@
     const btn = $('#btnSearch');
     btn.disabled = true; // until ready
     btn.addEventListener('click', (e)=>{ e.preventDefault(); doSearch(); });
+
+    // ===== Dev tiny tests =====
+    if(location.hash==="#test"){
+      const out = [];
+      out.push('— Running UI tests —');
+      out.push('isValidMobile("9893074891"): ' + isValidMobile('9893074891'));
+      out.push('isValidMobile("12345"): ' + isValidMobile('12345'));
+      out.push('jsonTry ok: ' + JSON.stringify(jsonTry('{"ok":1}')));
+      out.push('jsonTry bad: ' + jsonTry('Lambda html'));
+      const box = $('#tests'); box.classList.remove('hidden'); box.textContent = out.join('\n');
+    }
   });
   </script>
 </body>
