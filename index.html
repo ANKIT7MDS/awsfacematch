@@ -278,13 +278,15 @@ const payload = {
       body: JSON.stringify(payload)
     }, 25000);
 
-    if(!res.ok){
-      console.error('search error', res);
-      // status 0 → network / CORS
-      if(res.status===0) showAlert('नेटवर्क/ब्राउज़र एरर। बाद में फिर प्रयास करें।');
-      else showAlert(`सर्च में दिक्कत: API ${res.status}`);
-      return;
-    }
+   if(!res.ok){
+  console.error('search error', res);
+  const msg = (res.data && (res.data.message || res.data.error ||
+             (typeof res.data==='string' ? res.data : JSON.stringify(res.data)))) || 'Bad Request';
+  showAlert(`API ${res.status}: ${msg}`);
+  label.textContent=old; btnSearch.disabled=false;
+  return;
+}
+
 
     // Expected generic shape. We try to be flexible.
     const data = res.data || {};
