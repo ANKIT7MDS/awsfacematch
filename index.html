@@ -1,290 +1,289 @@
 <!doctype html>
 <html lang="hi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Face Search</title>
-  <style>
-    :root{
-      --accent:#ff8600;
-      --bg:#fff7ef;
-      --card:#fff;
-      --muted:#666;
-      --border:#eee;
-      --danger:#b00020;
-      --ok:#0a7f2e;
-    }
-    body{font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; margin:0; background:var(--bg);}
-    .wrap{max-width:1080px;margin-inline:auto;padding:16px;}
-    h1{margin:0 0 12px;padding:10px 12px;background:#ff8d0a;color:#111;}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-    @media(max-width:860px){.grid{grid-template-columns:1fr}}
-    .field{display:flex;flex-direction:column;gap:6px}
-    input[type="text"], input[type="tel"], input[type="file"]{padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:16px;background:#fff}
-    .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px}
-    .camera{position:relative;background:#000;border-radius:12px;overflow:hidden;min-height:260px}
-    video{width:100%;height:auto;display:block;background:#000}
-    .btn{cursor:pointer;user-select:none;border:none;border-radius:10px;padding:14px 18px;background:var(--accent);color:#111;font-weight:700;font-size:18px}
-    .btn:disabled{opacity:.5;pointer-events:none}
-    .status{margin-top:8px;padding:10px;border-radius:10px;background:#fff;border:1px solid var(--border);color:#222}
-    .status.ok{border-color:#cfe8d7;background:#f3fbf6;color:var(--ok)}
-    .status.err{border-color:#ffd6d6;background:#fff3f3;color:var(--danger)}
-    /* results */
-    .results{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-    @media(min-width:960px){.results{grid-template-columns:repeat(3,1fr)}}
-    .card{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-    .thumbBox{position:relative;height:200px;background:#f7f7f7;display:flex;align-items:center;justify-content:center;color:#999;font-size:14px}
-    .thumb{width:100%;height:100%;object-fit:cover;display:block}
-    .meta{padding:10px 12px;color:#333;font-size:14px;border-top:1px dashed #eee}
-    .meta small{color:var(--muted)}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
-    .pill{display:inline-block;background:#f3f5ff;border:1px solid #e6eaff;border-radius:999px;padding:4px 10px;font-size:12px;color:#445}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Face Search</title>
+<style>
+  :root{
+    --brand:#ff8a00;
+    --ink:#222;
+    --muted:#666;
+    --ok:#1a7f37;
+    --err:#c0392b;
+    --bg:#fff7ef;
+    --card:#fff;
+    --border:#eee;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+    background:#fff; color:var(--ink);
+  }
+  header{
+    background:var(--brand); color:#fff; padding:12px 16px; font-weight:700;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:16px; }
+  .grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px;}
+  @media (max-width:900px){ .grid{grid-template-columns: 1fr} }
+
+  label{display:block; font-size:14px; color:var(--muted); margin:4px 0 6px;}
+  input[type="text"],input[type="tel"],input[type="file"]{
+    width:100%; padding:12px 12px; border:1px solid var(--border); border-radius:10px; font-size:16px; background:#fff;
+  }
+
+  .panel{
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px;
+  }
+  .videoBox{
+    position:relative; background:#000; border-radius:12px; overflow:hidden; min-height:260px;
+    border:1px solid var(--border);
+  }
+  video{ width:100%; height:auto; display:block; background:#000; }
+  canvas{ display:none; }
+  .controls{ display:flex; gap:10px; margin:12px 0 0; }
+  .btn{
+    appearance:none; border:0; background:var(--brand); color:#fff; font-weight:700; border-radius:10px;
+    padding:12px 16px; cursor:pointer; transition:transform .05s ease;
+    position:relative; z-index:5; pointer-events:auto;
+  }
+  .btn:active{ transform:scale(.99); }
+  .btn.secondary{ background:#111; }
+  .btn.muted{ background:#e6e6e6; color:#222; }
+  .btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+  .hint{ font-size:13px; color:var(--muted); margin-top:8px; }
+  .msg{ margin-top:12px; padding:12px; border-radius:10px; background:var(--bg); border:1px solid var(--border); }
+  .msg.ok{ background:#eaf7ef; border-color:#d6efe0; color:var(--ok); }
+  .msg.err{ background:#fdecea; border-color:#fad3cf; color:var(--err); }
+  .msg.info{ background:#eef6ff; border-color:#d9ebff; color:#0b66c3; }
+
+  .results{ margin-top:18px; display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+  .card{
+    border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff;
+  }
+  .thumb{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:#f3f3f3; }
+  .meta{ padding:10px 12px; font-size:13px; color:#333; }
+  .meta b{ font-weight:700; }
+  .top-actions{ display:flex; gap:10px; align-items:center; }
+</style>
 </head>
 <body>
-  <h1>भारतीय जनता पार्टी — मंदसौर (Face Search)</h1>
-  <div class="wrap">
+<header>भारतीय जनता पार्टी — मंदसौर (Face Search)</header>
 
-    <div class="grid">
-      <!-- Left: form + camera -->
-      <div class="panel">
-        <div class="grid">
-          <div class="field">
-            <label>नाम (अनिवार्य)</label>
-            <input id="name" type="text" placeholder="अपना नाम">
-          </div>
-          <div class="field">
-            <label>मोबाइल नंबर (अनिवार्य)</label>
-            <input id="mobile" type="tel" placeholder="10 अंकों का मोबाइल">
-          </div>
+<div class="wrap">
+  <div class="grid">
+    <!-- LEFT: Camera + form -->
+    <div class="panel">
+      <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px">
+        <div>
+          <label>नाम (अनिवार्य)</label>
+          <input id="name" type="text" placeholder="अपना नाम" autocomplete="name"/>
         </div>
-
-        <div class="field" style="margin-top:10px">
-          <label>सेल्फी कैमरा</label>
-          <div class="camera" id="camBox">
-            <video id="video" muted playsinline></video>
-          </div>
-          <div class="row">
-            <button id="btnStart" class="btn" type="button">कैमरा चालू करें</button>
-            <button id="btnSnap" class="btn" type="button">सेल्फी लें</button>
-            <button id="btnStop" class="btn" type="button">कैमरा बंद</button>
-            <span id="camInfo" class="pill">PNG/WebP → JPEG auto</span>
-          </div>
-        </div>
-
-        <div class="field" style="margin-top:8px">
-          <label>या फ़ाइल चुनें</label>
-          <input id="file" type="file" accept="image/*">
-        </div>
-
-        <div class="field" style="margin-top:12px">
-          <button id="btnSearch" class="btn" type="button">Search</button>
-          <div id="msg" class="status" hidden></div>
+        <div>
+          <label>मोबाइल नंबर (अनिवार्य)</label>
+          <input id="mobile" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="10 अंकों का मोबाइल" />
         </div>
       </div>
 
-      <!-- Right: results -->
-      <div class="panel">
-        <div class="row" style="justify-content:space-between">
-          <div><b>मिले फोटो:</b> <span id="count">0</span></div>
-          <div class="pill">थंबनेल ऑटो-लोड</div>
+      <div style="margin-top:12px">
+        <label>सेल्फ़ी कैमरा</label>
+        <div class="videoBox">
+          <video id="video" autoplay playsinline muted></video>
         </div>
-        <div id="results" class="results" style="margin-top:10px"></div>
+        <div class="controls">
+          <button id="btnSnap" class="btn" type="button" onclick="takeSelfie()">सेल्फ़ी लें</button>
+          <button id="btnSearch" class="btn" type="button" onclick="doSearch()">Search</button>
+        </div>
+        <div class="hint">PNG/WebP → JPEG auto. * मोबाइल पर कैमरा अपने-आप खुलेगा (Allow दें)। फ़ाइल अपलोड की ज़रूरत नहीं।</div>
+        <div id="msg" class="msg" style="display:none"></div>
       </div>
     </div>
+
+    <!-- RIGHT: file + live result -->
+    <div class="panel">
+      <label>या फ़ाइल चुनें</label>
+      <input id="file" type="file" accept="image/*" capture="user" />
+      <div class="hint">अगर कैमरा उपलब्ध नहीं हो तो यहाँ से सेल्फ़ी चुनें।</div>
+
+      <div class="results" id="results"></div>
+    </div>
   </div>
+</div>
 
 <script>
-/* ====== CONFIG ====== */
-// अपने API का बेस URL यहाँ दें (ट्रailing स्लैश न हो)
-const API_BASE = (localStorage.getItem('API_BASE')
-  || 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2').replace(/\/+$/,'');
+/* ========= CONFIG ========= */
+const API_BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2'; // <-- अपना API स्टेज यहाँ दें
+const DEFAULT_SIM = 70;
 
-// newtab=1 होगा तो नया टैब, वरना इसी पेज में
-const urlParams = new URLSearchParams(location.search);
-const OPEN_IN_NEW_TAB = urlParams.get('newtab') === '1' ? true : false;
-
-/* ====== Helpers ====== */
-const $ = sel => document.querySelector(sel);
-const msg = (text, type='info')=>{
-  const box = $('#msg');
-  box.hidden = false;
-  box.className = 'status ' + (type==='err'?'err':type==='ok'?'ok':'');
-  box.textContent = text;
-};
-const clearMsg = ()=>{$('#msg').hidden = true;}
-
-/* ====== Camera ====== */
+/* ========= STATE ========= */
 let stream = null;
-const video = $('#video');
+let lastImageBase64 = null;
 
+/* ========= UTIL ========= */
+const $ = sel => document.querySelector(sel);
+function msg(text,type='info'){
+  const el = $('#msg'); if(!el) return;
+  el.className = 'msg ' + (type||'');
+  el.textContent = text;
+  el.style.display = text ? 'block':'none';
+}
+function clearMsg(){ msg('', ''); }
+function toBase64FromArrayBuffer(buf){
+  const b = new Uint8Array(buf);
+  let bin=''; for(let i=0;i<b.length;i++) bin += String.fromCharCode(b[i]);
+  return btoa(bin);
+}
+function byId(id){ return document.getElementById(id); }
+
+/* ========= CAMERA ========= */
 async function startCam(){
   try{
-    if(stream){return}
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
-    video.srcObject = stream;
-    await video.play().catch(()=>{}); // iOS safety
-  }catch(err){
-    console.warn('camera error', err);
-    msg('कैमरा नहीं खुला। आप फ़ाइल से भी खोज सकते हैं।', 'err');
+    if(stream) return;
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio:false });
+    const v = byId('video');
+    v.srcObject = stream;
+    await v.play().catch(()=>{});
+  }catch(e){
+    console.warn('camera error', e);
+    msg('कैमरा नहीं खुला। फ़ाइल से भी खोज सकते हैं।', 'info');
   }
 }
 function stopCam(){
-  if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-    stream = null;
-  }
-  video.removeAttribute('srcObject');
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  const v = byId('video'); v.removeAttribute('srcObject');
 }
-
-function getCanvasBlobFromVideo(){
+function canvasFromVideo(){
+  const v = byId('video');
+  const vw = v.videoWidth||720, vh = v.videoHeight||720;
   const c = document.createElement('canvas');
-  const vw = video.videoWidth || 720;
-  const vh = video.videoHeight || 720;
-  c.width = 720;
-  c.height = Math.round(720*vh/vw);
-  const ctx = c.getContext('2d');
-  ctx.drawImage(video, 0, 0, c.width, c.height);
-  return new Promise(res=>c.toBlob(b=>res(b),'image/jpeg',0.9));
+  c.width = 720; c.height = Math.round(720*vh/vw);
+  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  return c;
 }
-
-/* ====== Network ====== */
-async function fetchSmart(url, opts={}){
-  const res = await fetch(url, opts);
-  if(!res.ok){
-    let bodyText = '';
-    try{ bodyText = await res.text(); }catch{}
-    const err = new Error(`API ${res.status}`);
-    err.status = res.status; err.body = bodyText;
-    throw err;
+async function takeSelfie(){
+  try{
+    if(!stream) await startCam();
+    const c = canvasFromVideo();
+    const blob = await new Promise(res => c.toBlob(b => res(b), 'image/jpeg', 0.9));
+    const buf = await blob.arrayBuffer();
+    lastImageBase64 = toBase64FromArrayBuffer(buf);
+    msg('सेल्फ़ी तैयार ✅','ok');
+  }catch(e){
+    console.error(e);
+    msg('सेल्फ़ी लेने में दिक्कत।', 'err');
   }
-  const ct = res.headers.get('content-type')||'';
-  if(ct.includes('application/json')) return res.json();
-  return res;
 }
 
-/* ====== SEARCH ====== */
+/* ========= SEARCH ========= */
 async function doSearch(){
   clearMsg();
-  const name = $('#name').value.trim();
-  const mobile = $('#mobile').value.trim();
+
+  const name = byId('name').value.trim();
+  const mobile = byId('mobile').value.trim();
 
   if(!name){ msg('कृपया नाम भरें।','err'); return; }
   if(!/^\d{10}$/.test(mobile)){ msg('कृपया 10 अंकों का मोबाइल भरें।','err'); return; }
 
-  // Source: file OR camera
-  let imageBase64 = null, s3Bucket = null, s3Key = null;
-
-  const file = $('#file').files?.[0];
-  if(file){
-    const buf = await file.arrayBuffer();
-    imageBase64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-  }else if(stream){
-    const blob = await getCanvasBlobFromVideo();
+  // prefer selfie memory -> file -> live snap
+  let imageBase64 = lastImageBase64 || null;
+  const f = byId('file').files?.[0];
+  if(!imageBase64 && f){
+    const buf = await f.arrayBuffer();
+    imageBase64 = toBase64FromArrayBuffer(buf);
+  }
+  if(!imageBase64 && stream){
+    const c = canvasFromVideo();
+    const blob = await new Promise(res => c.toBlob(b=>res(b),'image/jpeg',0.9));
     const buf = await blob.arrayBuffer();
-    imageBase64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+    imageBase64 = toBase64FromArrayBuffer(buf);
   }
 
+  byId('btnSearch').disabled = true;
   msg('खोज चल रही है…', 'info');
-  $('#btnSearch').disabled = true;
 
   try{
-    const payload = { name, mobile, sim: 70 };
+    const payload = {
+      name, mobile,
+      sim: DEFAULT_SIM
+    };
     if(imageBase64) payload.imageBase64 = imageBase64;
 
-    // NOTE: बैकएंड 400 करेगा तो नीचे catch में साफ संदेश मिलेगा
-    const resp = await fetchSmart(`${API_BASE}/search`, {
+    const resp = await fetch(API_BASE + '/search', {
       method:'POST',
       headers:{'content-type':'application/json'},
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
-    // resp.results = [{photoId, s3Key, score}, ...]
-    const results = Array.isArray(resp.results)? resp.results : [];
-    renderResultsHere(results, {name, mobile});
+    if(!resp.ok){
+      const txt = await resp.text().catch(()=> '');
+      throw Object.assign(new Error('API '+resp.status), {status:resp.status, body:txt});
+    }
 
+    const data = await resp.json().catch(()=> ({}));
+    const results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+
+    renderResults(results);
     msg(`मिले ${results.length} फोटो।`, 'ok');
-  }catch(err){
+  }
+  catch(err){
     console.error('search error', err);
-    const det = err.body ? `\nडिटेल्स: ${err.body}` : '';
-    msg(`सर्व में दिक्कत: API ${err.status||'error'}${det}`, 'err');
-  }finally{
-    $('#btnSearch').disabled = false;
+    let detail = err.body ? `\nडिटेल्स: ${err.body}` : '';
+    msg(`सर्व में दिक्कत: API ${err.status||'error'}${detail}`, 'err');
+  }
+  finally{
+    byId('btnSearch').disabled = false;
   }
 }
 
-/* ====== RESULTS (Same page) ====== */
-function renderResultsHere(items, meta){
-  const box = $('#results');
-  box.innerHTML = '';
-  $('#count').textContent = items.length;
-
-  if(!items.length){
-    const div = document.createElement('div');
-    div.style.gridColumn = '1 / -1';
-    div.className = 'status';
-    div.textContent = 'कोई मिलान नहीं मिला।';
-    box.appendChild(div);
+/* ========= RENDER RESULTS ========= */
+function getKey(r){
+  // flexible field mapping (backend variations safe)
+  return r.s3Key || r.key || r.s3key || r.path || r.urlKey || '';
+}
+function getId(r){
+  return r.photoId || r.id || r.imageId || '';
+}
+function getScore(r){
+  return Math.round((r.similarity || r.score || r.confidence || 0) * 100) / 100;
+}
+function cardHTML(r){
+  const s3Key = getKey(r);
+  const photoId = getId(r);
+  const sim = getScore(r);
+  const imgURL = s3Key ? (API_BASE + '/download?key=' + encodeURIComponent(s3Key)) : '';
+  return `
+    <div class="card">
+      ${ imgURL
+        ? `<img class="thumb" loading="lazy" alt="${photoId||'photo'}" src="${imgURL}">`
+        : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#888">No preview</div>`
+      }
+      <div class="meta">
+        ${photoId ? `<div><b>ID:</b> ${photoId}</div>`:''}
+        ${sim ? `<div><b>~${sim}%</b> match</div>`:''}
+        ${s3Key ? `<div style="word-break:break-all;opacity:.7">${s3Key}</div>`:''}
+      </div>
+    </div>`;
+}
+function renderResults(items){
+  const box = byId('results');
+  if(!items || !items.length){
+    box.innerHTML = `<div class="msg">कोई फोटो नहीं मिला।</div>`;
     return;
   }
-
-  for(const it of items){
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const thumbBox = document.createElement('div');
-    thumbBox.className = 'thumbBox';
-    const img = document.createElement('img');
-    img.className = 'thumb';
-    img.alt = it.photoId || 'photo';
-    img.loading = 'lazy';
-    img.decoding = 'async';
-    img.crossOrigin = 'anonymous';
-    img.referrerPolicy = 'no-referrer';
-
-    // <<<<<<<<<< थंबनेल का असली फिक्स >>>>>>>>>>
-    // साइनड इमेज URL (key में / होते हैं, इसलिए encodeURIComponent)
-    const key = encodeURIComponent(it.s3Key || '');
-    const cacheBust = Date.now();
-    const imgUrl = `${API_BASE}/download?key=${key}&t=${cacheBust}`;
-    img.src = imgUrl;
-
-    img.onerror = ()=>{
-      thumbBox.textContent = 'No preview';
-      img.remove();
-    };
-
-    thumbBox.appendChild(img);
-    card.appendChild(thumbBox);
-
-    const metaDiv = document.createElement('div');
-    metaDiv.className = 'meta';
-    metaDiv.innerHTML = `
-      <div><b>ID:</b> ${it.photoId || '-'}  •  <small>~${Math.round((it.score||0)*100)}%</small></div>
-      <div><small>${it.s3Key||''}</small></div>
-      <div class="row" style="margin-top:8px">
-        <a class="btn" href="${imgUrl}&dl=1" target="_blank" rel="noopener">डाउनलोड</a>
-      </div>
-    `;
-    card.appendChild(metaDiv);
-
-    box.appendChild(card);
-  }
+  box.innerHTML = items.map(cardHTML).join('');
 }
 
-/* ====== Events ====== */
-$('#btnStart').addEventListener('click', startCam);
-$('#btnStop').addEventListener('click', stopCam);
-$('#btnSnap').addEventListener('click', async ()=>{
-  if(!stream){ await startCam(); }
-  // सिर्फ़ UI में एक हल्का हरा पल्स दिखाने के लिए
-  $('#camBox').style.boxShadow = '0 0 0 3px rgba(16,185,129,.45) inset';
-  setTimeout(()=>$('#camBox').style.boxShadow='none', 300);
-});
-$('#btnSearch').addEventListener('click', doSearch);
+/* ========= BOOT ========= */
+window.addEventListener('DOMContentLoaded', ()=>{
+  // ensure handlers also bound (inline onclick is already present)
+  byId('btnSnap')?.addEventListener('click', takeSelfie);
+  byId('btnSearch')?.addEventListener('click', doSearch);
 
-// पेज फ़ोकस बदलने पर iOS में abort warn आता है; harmless
-window.addEventListener('focus', ()=>{ if(video && video.paused && stream) video.play().catch(()=>{});});
+  // try auto camera on mobile/desktop
+  startCam();
+});
+window.addEventListener('beforeunload', stopCam);
 </script>
 </body>
 </html>
