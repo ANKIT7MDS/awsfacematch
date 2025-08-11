@@ -446,5 +446,20 @@ function bestImageSrc(m){
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
+
+<!-- Mobile floating Search button -->
+<button id="fabSearch" class="btn" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:9990;border-radius:999px;padding:14px 16px;box-shadow:0 10px 25px rgba(0,0,0,.25)">Search</button>
+<script>
+  // Show FAB on mobile only
+  const fab = document.getElementById('fabSearch');
+  function isMobile(){ return window.matchMedia('(max-width: 720px)').matches; }
+  function toggleFab(){
+    if(isMobile()){ fab.style.display='block'; }
+    else{ fab.style.display='none'; }
+  }
+  toggleFab(); window.addEventListener('resize', toggleFab);
+  fab.addEventListener('click', ()=> document.getElementById('doSearch')?.click());
+</script>
+
 </body>
 </html>
