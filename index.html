@@ -115,7 +115,6 @@
   // ------------ CAMERA ------------
   const video = document.getElementById('video');
   let stream;
-  let lastCapture = null;  // latest captured selfie (File)
 
   document.getElementById('camOn').onclick = async () => {
     try{
@@ -131,16 +130,19 @@
     const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight;
     c.getContext('2d').drawImage(video,0,0);
     c.toBlob(b=>{
-      lastCapture = new File([b],'selfie.jpg',{type:'image/jpeg'});
+      const f=new File([b],'selfie.jpg',{type:'image/jpeg'});
+      window.__lastCaptureFile = f; // store for manual search
       const fi = document.getElementById('file');
-      try{ const dt = new DataTransfer(); dt.items.add(lastCapture); fi.files = dt.files; }catch{}
-      setMsg('सेल्फी कैप्चर हो गई—अब "Search" दबाएँ');
+      // put into file input via DataTransfer so user sees selected
+      const dt = new DataTransfer(); dt.items.add(f); fi.files = dt.files;
+      setMsg('सेल्फी कैप्चर हो गई — अब "Search" दबाएँ');
     },'image/jpeg',0.92);
   };
 
   // ------------ SEARCH ------------
   document.getElementById('doSearch').onclick = () => {
-    const f = document.getElementById('file').files?.[0] || lastCapture;
+    let f = document.getElementById('file').files?.[0];
+    if(!f && window.__lastCaptureFile) f = window.__lastCaptureFile;
     if(!f){ alert('कृपया selfie upload करें या कैमरा से कैप्चर करें'); return; }
     runSearch(f);
   };
@@ -226,19 +228,20 @@
 
   // helper: best image src with proxy-first
   
-function bestImageSrc(m) {
-    // Prefer server proxy with s3Key; else fall back to any direct URL fields (including s3url)
-    const s3url = m.s3url || m.s3Url || m.S3URL || '';
-    let key = m.s3Key || m.key || '';
-    if (!key && s3url) {
-      try { key = decodeURIComponent(new URL(s3url).pathname.replace(/^\/+/, '')); } catch {}
-    }
-    const direct = s3url || m.imageUrl || m.signedUrl || m.url || '';
+  function bestImageSrc(m) {
+    const keyFromUrl = (u) => {
+      try { const p = new URL(u).pathname; return decodeURIComponent(p.replace(/^\/+/,'').replace(/^%2F/gi,'')); } catch { return ''; }
+    };
+    const key = m.s3Key || m.s3key || keyFromUrl(m.s3url || m.url || '');
+    const direct = m.signedUrl || m.imageUrl || m.s3url || m.url || '';
     if (key) return `${API_BASE}/download?key=${encodeURIComponent(key)}&t=${Date.now()}`;
+    if (direct && /X-Amz-Signature=/.test(String(direct))) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
+    return '';
+  }
+/download?key=${encodeURIComponent(key)}&t=${Date.now()}`;
     if (direct) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
     return '';
   }
-
 
   function fillGrid(matches){
     grid.innerHTML = '';
@@ -263,7 +266,7 @@ function bestImageSrc(m) {
       img.onerror = () => {
         const usedProxy = primary.startsWith(API_BASE + '/download');
         const key2 = m.s3Key || m.photoId || m.key || '';
-        const direct2 = m.s3url || m.s3Url || m.S3URL || m.imageUrl || m.signedUrl || m.url || '';
+        const direct2 = m.imageUrl || m.signedUrl || m.url || '';
         if (usedProxy && direct2) {
           primary = `${direct2}${direct2.includes('?') ? '&' : '?'}t=${Date.now()}`;
           img.src = primary;
