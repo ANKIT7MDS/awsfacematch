@@ -262,13 +262,15 @@ async function doSearch(cursor=null){
   label.innerHTML = `<span class="spinner"></span>Searching…`;
   btnSearch.disabled = true;
 
-  try{
-    const payload = {
-      name, mobile,
-      image: dataURL,         // Data URL (JPEG)
-      cursor: cursor || null, // pagination token (if your API supports)
-      pageSize: 12
-    };
+  const b64 = toBase64(dataURL);  // "data:..." से सिर्फ़ base64 हिस्सा
+const payload = {
+  name, mobile,
+  image: b64,                   // ✅ अब सिर्फ base64 जाएगा
+  eventId: eventId || undefined,
+  cursor: cursor || null,
+  pageSize: 12
+};
+
 
     const res = await fetchJSON(SEARCH_URL, {
       method:'POST',
