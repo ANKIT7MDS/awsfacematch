@@ -55,6 +55,7 @@
 <header>भारतीय जनता पार्टी — मंदसौर</header>
 <main>
 
+  <!-- Search form -->
   <section class="card">
     <div class="row grid-2">
       <div>
@@ -89,6 +90,7 @@
     </div>
   </section>
 
+  <!-- Results -->
   <section class="card">
     <div class="actions" style="justify-content:space-between;align-items:center;margin-bottom:8px">
       <div class="muted" id="msg">—</div>
@@ -108,110 +110,108 @@
 
 <script>
   // ------------ CONFIG ------------
-  const API_BASE = localStorage.getItem('apiBase') || ''; // पहले API Base सेट कर लें
-  if(!API_BASE){
+  const API_BASE = localStorage.getItem('apiBase') || '';
+  if (!API_BASE) {
     console.warn('API base सेट नहीं है. एक बार यह चलाएँ:\nlocalStorage.setItem("apiBase","https://<api-id>.execute-api.ap-south-1.amazonaws.com/PROD2"); location.reload();');
   }
-  const DOWNLOAD_FALLBACK = true;
 
   // ------------ CAMERA ------------
   const video = document.getElementById('video');
   let stream;
 
   document.getElementById('camOn').onclick = async () => {
-    try{
+    try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
       video.srcObject = stream;
-    }catch(e){ alert('कैमरा उपलब्ध नहीं: '+e.message); }
+    } catch (e) { alert('कैमरा उपलब्ध नहीं: ' + e.message); }
   };
   document.getElementById('camOff').onclick = () => {
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; video.srcObject=null; }
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null; }
   };
   document.getElementById('snap').onclick = () => {
-    if(!video.srcObject){ alert('पहले कैमरा चालू करें'); return; }
-    const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight;
-    c.getContext('2d').drawImage(video,0,0);
-    c.toBlob(b=>{
-      const f=new File([b],'selfie.jpg',{type:'image/jpeg'});
+    if (!video.srcObject) { alert('पहले कैमरा चालू करें'); return; }
+    const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    c.toBlob(b => {
+      const f = new File([b], 'selfie.jpg', { type: 'image/jpeg' });
       runSearch(f);
-    },'image/jpeg',0.92);
+    }, 'image/jpeg', 0.92);
   };
 
   // ------------ SEARCH ------------
   document.getElementById('doSearch').onclick = () => {
     const f = document.getElementById('file').files?.[0];
-    if(!f){ alert('कृपया selfie upload करें या कैमरा से कैप्चर करें'); return; }
+    if (!f) { alert('कृपया selfie upload करें या कैमरा से कैप्चर करें'); return; }
     runSearch(f);
   };
 
-  async function runSearch(file){
+  async function runSearch(file) {
     setMsg('Searching...');
     clearGrid();
 
-    try{
+    try {
       const jpeg = await toJpeg(file);
-      const imageBase64 = await fileToBase64(jpeg); // raw base64 without data prefix
+      const imageBase64 = await fileToBase64(jpeg); // raw base64 (data: prefix हटाके)
 
       const payload = {
         name: (document.getElementById('name').value || '').trim(),
         phone: (document.getElementById('phone').value || '').trim(),
         imageBase64
-        // जरूरत हो तो eventId आदि भी यहाँ जोड़ें
       };
 
       const res = await fetch(`${API_BASE}/search`, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       const txt = await res.text();
-      let data; try{ data = JSON.parse(txt); } catch { data = { _raw: txt }; }
+      let data; try { data = JSON.parse(txt); } catch { data = { _raw: txt }; }
 
-      if(!res.ok){
+      if (!res.ok) {
         console.warn('search fail', data);
         setMsg(data?.message || 'Search failed');
         return;
       }
 
       const matches = data.matches || [];
-      if(!matches.length){ setMsg('कोई मैच नहीं मिला'); setFound(0); return; }
+      if (!matches.length) { setMsg('कोई मैच नहीं मिला'); setFound(0); return; }
 
       fillGrid(matches);
       setFound(matches.length);
       setMsg('मिले फोटो तैयार हैं');
-    }catch(e){
+    } catch (e) {
       console.error(e);
       setMsg('नेटवर्क/प्रोसेस त्रुटि');
     }
   }
 
-  function setMsg(t){ document.getElementById('msg').textContent=t; }
-  function setFound(n){ document.getElementById('foundCount').textContent = `मिले: ${n}`; }
+  function setMsg(t) { document.getElementById('msg').textContent = t; }
+  function setFound(n) { document.getElementById('foundCount').textContent = `मिले: ${n}`; }
 
   // PNG/WebP → JPEG (downscale)
-  async function toJpeg(file,maxDim=1600,quality=0.9){
-    if(/jpe?g$/i.test(file.name) && /jpe?g/i.test(file.type)) return file;
+  async function toJpeg(file, maxDim = 1600, quality = 0.9) {
+    if (/jpe?g$/i.test(file.name) && /jpe?g/i.test(file.type)) return file;
     const img = await blobToImage(file);
-    const w=img.width,h=img.height; let nw=w,nh=h;
-    if(Math.max(w,h)>maxDim){const k=maxDim/Math.max(w,h); nw=Math.round(w*k); nh=Math.round(h*k);}
-    const c=document.createElement('canvas'); c.width=nw; c.height=nh;
-    c.getContext('2d').drawImage(img,0,0,nw,nh);
-    const b=await new Promise(r=>c.toBlob(r,'image/jpeg',quality));
-    return new File([b],file.name.replace(/\.\w+$/,'.jpg'),{type:'image/jpeg'});
+    const w = img.width, h = img.height; let nw = w, nh = h;
+    if (Math.max(w, h) > maxDim) { const k = maxDim / Math.max(w, h); nw = Math.round(w * k); nh = Math.round(h * k); }
+    const c = document.createElement('canvas'); c.width = nw; c.height = nh;
+    c.getContext('2d').drawImage(img, 0, 0, nw, nh);
+    const b = await new Promise(r => c.toBlob(r, 'image/jpeg', quality));
+    return new File([b], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
   }
-  function blobToImage(file){
-    return new Promise((res,rej)=>{
-      const u=URL.createObjectURL(file), i=new Image();
-      i.onload=()=>{URL.revokeObjectURL(u);res(i)}; i.onerror=e=>{URL.revokeObjectURL(u);rej(e)}; i.src=u;
+  function blobToImage(file) {
+    return new Promise((res, rej) => {
+      const u = URL.createObjectURL(file), i = new Image();
+      i.onload = () => { URL.revokeObjectURL(u); res(i) }; i.onerror = e => { URL.revokeObjectURL(u); rej(e) }; i.src = u;
     });
   }
-  function fileToBase64(file){
-    return new Promise((resolve,reject)=>{
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
       const fr = new FileReader();
       fr.onload = () => {
         const s = String(fr.result || '');
-        const raw = s.includes(',') ? s.split(',')[1] : s; // strip data:... prefix
+        const raw = s.includes(',') ? s.split(',')[1] : s;
         resolve(raw);
       };
       fr.onerror = reject;
@@ -222,116 +222,103 @@
   // ------------ GRID / SELECT ------------
   const grid = document.getElementById('grid');
 
-  function clearGrid(){ grid.innerHTML=''; setFound(0); }
+  function clearGrid() { grid.innerHTML = ''; setFound(0); }
 
-<script>
-// ... बाकी कोड जैसा है वैसा रहने दें ...
-
-// ✅ सबसे पहले ये helper जोड़ दें (fillGrid के ऊपर कहीं भी):
-function bestImageSrc(m) {
-  // बैकएंड से आने वाले संभावित फील्ड्स
-  const key = m.s3Key || m.photoId || m.key || '';
-  const direct = m.imageUrl || m.signedUrl || m.url || '';
-  // थंबनेल के लिए हम प्रॉक्सी को प्राथमिकता देते हैं (CORS/403 से बचने के लिए)
-  if (key) return `${API_BASE}/download?key=${encodeURIComponent(key)}&t=${Date.now()}`;
-  if (direct) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
-  return ''; // कुछ भी न हो तो खाली
-}
-
-// ❗️इस पूरी fillGrid को replace करें:
-function fillGrid(matches){
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-
-  matches.forEach((m, idx) => {
+  function bestImageSrc(m) {
     const key = m.s3Key || m.photoId || m.key || '';
-    const name = (key.split('/').pop() || m.name || `photo_${idx}`).replace(/\s+/g,'_');
+    const direct = m.imageUrl || m.signedUrl || m.url || '';
+    if (key) return `${API_BASE}/download?key=${encodeURIComponent(key)}&t=${Date.now()}`; // proxy‑first
+    if (direct) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
+    return '';
+  }
 
-    const card = document.createElement('div');
-    card.className = 'thumb';
-    card.innerHTML = `
-      <input type="checkbox">
-      <img loading="lazy" alt="${name}">
-      <div class="cap">${name}</div>
-    `;
+  function fillGrid(matches) {
+    grid.innerHTML = '';
+    matches.forEach((m, idx) => {
+      const key = m.s3Key || m.photoId || m.key || '';
+      const name = (key.split('/').pop() || m.name || `photo_${idx}`).replace(/\s+/g, '_');
 
-    const img = card.querySelector('img');
-    img.crossOrigin = 'anonymous';
+      const card = document.createElement('div');
+      card.className = 'thumb';
+      card.innerHTML = `
+        <input type="checkbox">
+        <img loading="lazy" alt="${name}">
+        <div class="cap">${name}</div>
+      `;
 
-    // प्राथमिक src (proxy-first)
-    let primary = bestImageSrc(m);
-    img.src = primary;
+      const img = card.querySelector('img');
+      img.crossOrigin = 'anonymous';
 
-    // onerror fallback: अगर direct था तो proxy ट्राय करें, नहीं था तो direct ट्राय करें।
-    img.onerror = () => {
-      // पहले जो लगाया था वो proxy था या direct?
-      const usedProxy = primary.startsWith(API_BASE + '/download');
-      const key2 = m.s3Key || m.photoId || m.key || '';
-      const direct2 = m.imageUrl || m.signedUrl || m.url || '';
+      let primary = bestImageSrc(m);
+      img.src = primary;
 
-      if (usedProxy && direct2) {
-        // proxy → direct fallback
-        primary = `${direct2}${direct2.includes('?') ? '&' : '?'}t=${Date.now()}`;
-        img.src = primary;
-      } else if (!usedProxy && key2) {
-        // direct → proxy fallback
-        primary = `${API_BASE}/download?key=${encodeURIComponent(key2)}&t=${Date.now()}`;
-        img.src = primary;
-      } else {
-        // दोनों fail — प्लेसहोल्डर/मैसेज
-        img.onerror = null;
-        img.src =
-          'data:image/svg+xml;utf8,' +
-          encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200">
+      img.onerror = () => {
+        const usedProxy = primary.startsWith(API_BASE + '/download');
+        const key2 = m.s3Key || m.photoId || m.key || '';
+        const direct2 = m.imageUrl || m.signedUrl || m.url || '';
+        if (usedProxy && direct2) {
+          primary = `${direct2}${direct2.includes('?') ? '&' : '?'}t=${Date.now()}`; img.src = primary;
+        } else if (!usedProxy && key2) {
+          primary = `${API_BASE}/download?key=${encodeURIComponent(key2)}&t=${Date.now()}`; img.src = primary;
+        } else {
+          img.onerror = null;
+          img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200">
             <rect width="100%" height="100%" fill="#f3f4f6"/>
             <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
                   font-family="system-ui" font-size="14" fill="#9ca3af">Preview unavailable</text>
           </svg>`);
-      }
-    };
+        }
+      };
 
-    const cb = card.querySelector('input');
-    cb.addEventListener('change',()=>{ card.classList.toggle('sel', cb.checked); });
-    card.addEventListener('click',e=>{
-      if(e.target.tagName!=='INPUT'){ cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); }
+      const cb = card.querySelector('input');
+      cb.addEventListener('change', () => { card.classList.toggle('sel', cb.checked); });
+      card.addEventListener('click', e => {
+        if (e.target.tagName !== 'INPUT') { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+      });
+
+      grid.appendChild(card);
     });
+  }
 
-    grid.appendChild(card);
-  });
-}
-
-// ... बाकी कोड जैसा है वैसा रहने दें ...
-
-
+  // Select/Clear
+  document.getElementById('btnSelectAll').onclick = () => {
+    [...grid.querySelectorAll('.thumb input[type="checkbox"]')].forEach(cb => {
+      if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+    });
+  };
+  document.getElementById('btnClear').onclick = () => {
+    [...grid.querySelectorAll('.thumb input[type="checkbox"]')].forEach(cb => {
+      if (cb.checked) { cb.checked = false; cb.dispatchEvent(new Event('change')); }
+    });
+  };
 
   // ------------ DOWNLOAD SELECTED (ZIP) ------------
-  document.getElementById('btnDownload').onclick = async ()=>{
-    const picks = [...grid.querySelectorAll('.thumb')].filter(t=>t.querySelector('input').checked);
-    if(!picks.length){ alert('कोई फ़ोटो select नहीं है'); return; }
+  document.getElementById('btnDownload').onclick = async () => {
+    const picks = [...grid.querySelectorAll('.thumb')].filter(t => t.querySelector('input').checked);
+    if (!picks.length) { alert('कोई फ़ोटो select नहीं है'); return; }
 
     setMsg('Preparing ZIP…');
     const zip = new JSZip(); let done = 0;
 
-    for(const t of picks){
+    for (const t of picks) {
       const img = t.querySelector('img');
       const cap = t.querySelector('.cap')?.textContent?.trim() || `photo_${Date.now()}`;
-      const fileName = cap.replace(/\.[a-z0-9]+$/i,'') + '.jpg'; // force .jpg
+      const fileName = cap.replace(/\.[a-z0-9]+$/i, '') + '.jpg'; // force .jpg
 
-      try{
-        const b = await fetch(img.src,{mode:'cors'}).then(r=>r.blob());
+      try {
+        const b = await fetch(img.src, { mode: 'cors' }).then(r => r.blob());
         zip.file(fileName, b);
         done++;
         setMsg(`Added ${done}/${picks.length}`);
-      }catch(e){
+      } catch (e) {
         console.warn('download fail', e);
       }
     }
 
-    const blob = await zip.generateAsync({type:'blob'});
-    saveAs(blob, `wedmatch_${new Date().toISOString().slice(0,10)}.zip`);
+    const blob = await zip.generateAsync({ type: 'blob' });
+    saveAs(blob, `wedmatch_${new Date().toISOString().slice(0, 10)}.zip`);
     setMsg(`ZIP ready (${picks.length} files)`);
   };
 </script>
 </body>
 </html>
-
