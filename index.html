@@ -119,16 +119,14 @@
 
 <script>
   /********************** CONFIG **********************/
-  const API_BASE_DEFAULT = ''; // चाहें तो यहां hardcode कर दें
-  const API_BASE = localStorage.getItem('apiBase') || API_BASE_DEFAULT;
-  if(!API_BASE){
-    console.warn('apiBase missing. Set it via localStorage.apiBase = "<your-api>"');
-  }
+ // Set API base URL for the application
+(function() {
+  const apiBaseUrl = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
+  localStorage.setItem('apiBase', apiBaseUrl);
+  console.log(`API base set to: ${apiBaseUrl}`);
+  location.reload();
+})();
 
-  // हमेशा /download?key से ही image दिखाएँ/डाउनलोड करें → एक जैसा JPEG output
-  function s3DownloadUrl(key){
-    return `${API_BASE}/download?key=${encodeURIComponent(key)}`;
-  }
 
   /********************** CAMERA **********************/
   const video = document.getElementById('video');
@@ -313,3 +311,4 @@
 </script>
 </body>
 </html>
+
