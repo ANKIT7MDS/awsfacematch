@@ -1,289 +1,432 @@
 <!doctype html>
 <html lang="hi">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Face Search</title>
-<style>
-  :root{
-    --brand:#ff8a00;
-    --ink:#222;
-    --muted:#666;
-    --ok:#1a7f37;
-    --err:#c0392b;
-    --bg:#fff7ef;
-    --card:#fff;
-    --border:#eee;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
-    background:#fff; color:var(--ink);
-  }
-  header{
-    background:var(--brand); color:#fff; padding:12px 16px; font-weight:700;
-  }
-  .wrap{max-width:1080px; margin:0 auto; padding:16px; }
-  .grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px;}
-  @media (max-width:900px){ .grid{grid-template-columns: 1fr} }
-
-  label{display:block; font-size:14px; color:var(--muted); margin:4px 0 6px;}
-  input[type="text"],input[type="tel"],input[type="file"]{
-    width:100%; padding:12px 12px; border:1px solid var(--border); border-radius:10px; font-size:16px; background:#fff;
-  }
-
-  .panel{
-    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px;
-  }
-  .videoBox{
-    position:relative; background:#000; border-radius:12px; overflow:hidden; min-height:260px;
-    border:1px solid var(--border);
-  }
-  video{ width:100%; height:auto; display:block; background:#000; }
-  canvas{ display:none; }
-  .controls{ display:flex; gap:10px; margin:12px 0 0; }
-  .btn{
-    appearance:none; border:0; background:var(--brand); color:#fff; font-weight:700; border-radius:10px;
-    padding:12px 16px; cursor:pointer; transition:transform .05s ease;
-    position:relative; z-index:5; pointer-events:auto;
-  }
-  .btn:active{ transform:scale(.99); }
-  .btn.secondary{ background:#111; }
-  .btn.muted{ background:#e6e6e6; color:#222; }
-  .btn:disabled{ opacity:.55; cursor:not-allowed; }
-
-  .hint{ font-size:13px; color:var(--muted); margin-top:8px; }
-  .msg{ margin-top:12px; padding:12px; border-radius:10px; background:var(--bg); border:1px solid var(--border); }
-  .msg.ok{ background:#eaf7ef; border-color:#d6efe0; color:var(--ok); }
-  .msg.err{ background:#fdecea; border-color:#fad3cf; color:var(--err); }
-  .msg.info{ background:#eef6ff; border-color:#d9ebff; color:#0b66c3; }
-
-  .results{ margin-top:18px; display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
-  .card{
-    border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff;
-  }
-  .thumb{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:#f3f3f3; }
-  .meta{ padding:10px 12px; font-size:13px; color:#333; }
-  .meta b{ font-weight:700; }
-  .top-actions{ display:flex; gap:10px; align-items:center; }
-</style>
+  <meta charset="utf-8">
+  <title>Face Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{
+      --brand:#ff8800;
+      --bg:#fff7ef;
+      --card:#ffffff;
+      --muted:#777;
+      --danger:#b00020;
+      --ok:#108a00;
+      --border:#eee;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    header{background:var(--brand);color:#fff;padding:10px 14px;font-weight:700}
+    main{padding:14px;max-width:1200px;margin:auto}
+    .layout{display:grid;grid-template-columns: 1fr 1fr;gap:14px}
+    @media (max-width:900px){.layout{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    .card .hd{padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600}
+    .card .bd{padding:14px}
+    label{display:block;margin:10px 0 6px;font-weight:600}
+    input[type=text],input[type=tel],input[type=file]{width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:8px;font:inherit}
+    .btn{display:inline-block;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .btn.gray{background:#222}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .hint{color:var(--muted);font-size:.92rem}
+    .ok{color:var(--ok);font-weight:600}
+    .danger{color:#fff;background:#ffe3e6;border:1px solid #ffd1d6;padding:12px;border-radius:8px;color:#a10015}
+    details.err{margin-top:6px}
+    #video{width:100%;background:#000;border-radius:12px}
+    #canvas{width:100%;display:none;border-radius:12px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media (max-width:700px){.grid{grid-template-columns:1fr}}
+    .thumb{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f3f3f3;border-radius:10px;border:1px solid var(--border)}
+    .cardR{padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+    .meta{font-size:.9rem;color:#444;margin-top:6px}
+    .muted{color:var(--muted)}
+    .msg{padding:10px;border:1px dashed var(--border);border-radius:8px;color:#444;background:#fafafa}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#f0f0f0;font-size:.8rem}
+    .stat{margin:8px 0 0 0}
+  </style>
 </head>
 <body>
-<header>भारतीय जनता पार्टी — मंदसौर (Face Search)</header>
+  <header>Face Search</header>
+  <main>
+    <div class="layout">
+      <!-- LEFT: Form + Camera -->
+      <section class="card">
+        <div class="hd">खोज</div>
+        <div class="bd">
+          <div class="row">
+            <div style="flex:1">
+              <label>नाम <span class="muted">(अनिवार्य)</span></label>
+              <input id="name" type="text" placeholder="आपका नाम" autocomplete="name" required>
+            </div>
+            <div style="flex:1">
+              <label>मोबाइल नंबर <span class="muted">(अनिवार्य)</span></label>
+              <input id="mobile" type="tel" placeholder="10 अंकों का नंबर" maxlength="10" inputmode="numeric" required>
+            </div>
+          </div>
 
-<div class="wrap">
-  <div class="grid">
-    <!-- LEFT: Camera + form -->
-    <div class="panel">
-      <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px">
-        <div>
-          <label>नाम (अनिवार्य)</label>
-          <input id="name" type="text" placeholder="अपना नाम" autocomplete="name"/>
-        </div>
-        <div>
-          <label>मोबाइल नंबर (अनिवार्य)</label>
-          <input id="mobile" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="10 अंकों का मोबाइल" />
-        </div>
-      </div>
+          <label class="stat">सेल्फी कैमरा</label>
+          <video id="video" playsinline autoplay muted></video>
+          <canvas id="canvas"></canvas>
 
-      <div style="margin-top:12px">
-        <label>सेल्फ़ी कैमरा</label>
-        <div class="videoBox">
-          <video id="video" autoplay playsinline muted></video>
+          <div class="actions">
+            <button id="btnSnap" class="btn">सेल्फ़ी लें</button>
+            <button id="btnRetake" class="btn gray" type="button">दोबारा लें</button>
+          </div>
+
+          <div class="stat">
+            <span id="selfieStatus" class="muted">सेल्फ़ी तैयार करें या फ़ाइल चुनें।</span>
+          </div>
+
+          <label class="stat">या फ़ाइल चुनें</label>
+          <input id="fileInput" type="file" accept="image/*">
+
+          <div class="hint" style="margin:10px 0 4px">
+            PNG/WebP → JPEG auto. * मोबाइल पर कैमरा अपने-आप खुलेगा (Allow दें)।
+          </div>
+
+          <div class="actions" style="margin-top:12px">
+            <button id="btnSearch" class="btn" style="min-width:160px">Search</button>
+          </div>
+
+          <div id="status" class="stat"></div>
+          <details id="errBox" class="err">
+            <summary>एरर डीटेल्स</summary>
+            <pre id="errText" style="white-space:pre-wrap"></pre>
+          </details>
         </div>
-        <div class="controls">
-          <button id="btnSnap" class="btn" type="button" onclick="takeSelfie()">सेल्फ़ी लें</button>
-          <button id="btnSearch" class="btn" type="button" onclick="doSearch()">Search</button>
+      </section>
+
+      <!-- RIGHT: Results -->
+      <section class="card">
+        <div class="hd">परिणाम</div>
+        <div class="bd">
+          <div id="found" class="ok" style="display:none"></div>
+          <div id="results" class="grid"></div>
+          <div id="empty" class="msg" style="display:none">कोई फोटो नहीं मिला।</div>
         </div>
-        <div class="hint">PNG/WebP → JPEG auto. * मोबाइल पर कैमरा अपने-आप खुलेगा (Allow दें)। फ़ाइल अपलोड की ज़रूरत नहीं।</div>
-        <div id="msg" class="msg" style="display:none"></div>
-      </div>
+      </section>
     </div>
-
-    <!-- RIGHT: file + live result -->
-    <div class="panel">
-      <label>या फ़ाइल चुनें</label>
-      <input id="file" type="file" accept="image/*" capture="user" />
-      <div class="hint">अगर कैमरा उपलब्ध नहीं हो तो यहाँ से सेल्फ़ी चुनें।</div>
-
-      <div class="results" id="results"></div>
-    </div>
-  </div>
-</div>
+  </main>
 
 <script>
-/* ========= CONFIG ========= */
-const API_BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2'; // <-- अपना API स्टेज यहाँ दें
-const DEFAULT_SIM = 70;
+/* ====== CONFIG ====== */
+// change if needed OR pass in URL:  ?api=...&event=...
+const API_BASE = param('api') || 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
+const DEFAULT_EVENT_ID = param('event') || 'demo-2025-01';   // अपने इवेंट के हिसाब से सेट करें
+const DEFAULT_SIM = Number(param('sim') || 70);              // न्यूनतम similarity
 
-/* ========= STATE ========= */
-let stream = null;
-let lastImageBase64 = null;
-
-/* ========= UTIL ========= */
+/* ====== DOM ====== */
 const $ = sel => document.querySelector(sel);
-function msg(text,type='info'){
-  const el = $('#msg'); if(!el) return;
-  el.className = 'msg ' + (type||'');
-  el.textContent = text;
-  el.style.display = text ? 'block':'none';
-}
-function clearMsg(){ msg('', ''); }
-function toBase64FromArrayBuffer(buf){
-  const b = new Uint8Array(buf);
-  let bin=''; for(let i=0;i<b.length;i++) bin += String.fromCharCode(b[i]);
-  return btoa(bin);
-}
-function byId(id){ return document.getElementById(id); }
+const nameEl   = $('#name');
+const mobileEl = $('#mobile');
+const video    = $('#video');
+const canvas   = $('#canvas');
+const fileEl   = $('#fileInput');
+const btnSnap  = $('#btnSnap');
+const btnRetake= $('#btnRetake');
+const btnSearch= $('#btnSearch');
+const selfieStatus = $('#selfieStatus');
+const resultsEl = $('#results');
+const emptyEl   = $('#empty');
+const foundEl   = $('#found');
+const errBox    = $('#errBox');
+const errText   = $('#errText');
+const statusEl  = $('#status');
 
-/* ========= CAMERA ========= */
-async function startCam(){
+/* ====== STATE ====== */
+const state = {
+  stream: null,
+  imageBase64: '', // only base64 (no dataurl header)
+  imgBytes: 0,
+  lastFileName: ''
+};
+
+/* ====== HELPERS ====== */
+function param(k){
+  const u = new URL(location.href);
+  return u.searchParams.get(k);
+}
+function stripDataUrl(dataUrl){
+  const idx = dataUrl.indexOf(',');
+  return idx > -1 ? dataUrl.slice(idx+1) : dataUrl;
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ====== CAMERA ====== */
+async function startCamera(){
   try{
-    if(stream) return;
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio:false });
-    const v = byId('video');
-    v.srcObject = stream;
-    await v.play().catch(()=>{});
-  }catch(e){
-    console.warn('camera error', e);
-    msg('कैमरा नहीं खुला। फ़ाइल से भी खोज सकते हैं।', 'info');
+    state.stream?.getTracks()?.forEach(t => t.stop());
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode: 'user' },
+      audio:false
+    });
+    state.stream = stream;
+    video.srcObject = stream;
+    await video.play().catch(()=>{});
+  }catch(err){
+    // सिर्फ़ चेतावनी दिखाएँ, फ़ाइल अपलोड fallback रहेगा
+    console.warn('camera error', err);
+    statusMsg('कैमरा उपलब्ध नहीं। फ़ाइल से भी खोज कर सकते हैं।', 'warn');
   }
 }
-function stopCam(){
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  const v = byId('video'); v.removeAttribute('srcObject');
+function stopCamera(){
+  try{ state.stream?.getTracks()?.forEach(t => t.stop()); }catch{}
+  video.srcObject = null;
 }
-function canvasFromVideo(){
-  const v = byId('video');
-  const vw = v.videoWidth||720, vh = v.videoHeight||720;
-  const c = document.createElement('canvas');
-  c.width = 720; c.height = Math.round(720*vh/vw);
-  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
-  return c;
+function snapshot(){
+  const w = video.videoWidth || 720;
+  const h = video.videoHeight || 720;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video,0,0,w,h);
+  const dataUrl = canvas.toDataURL('image/jpeg', .9);
+  state.imageBase64 = stripDataUrl(dataUrl);
+  state.imgBytes = Math.round((state.imageBase64.length * 3) / 4);
 }
-async function takeSelfie(){
+
+/* ====== FILE → BASE64 ====== */
+function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+async function useFile(file){
   try{
-    if(!stream) await startCam();
-    const c = canvasFromVideo();
-    const blob = await new Promise(res => c.toBlob(b => res(b), 'image/jpeg', 0.9));
-    const buf = await blob.arrayBuffer();
-    lastImageBase64 = toBase64FromArrayBuffer(buf);
-    msg('सेल्फ़ी तैयार ✅','ok');
-  }catch(e){
-    console.error(e);
-    msg('सेल्फ़ी लेने में दिक्कत।', 'err');
+    const dataUrl = await fileToDataURL(file);
+    // draw on canvas to normalize format (and allow retake button to hide video)
+    const img = new Image();
+    await new Promise((res,rej)=>{
+      img.onload=res; img.onerror=rej; img.src=dataUrl;
+    });
+    const w = img.width || 720, h = img.height || 720;
+    canvas.width=w; canvas.height=h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img,0,0,w,h);
+    const jpeg = canvas.toDataURL('image/jpeg', .9);
+    state.imageBase64 = stripDataUrl(jpeg);
+    state.imgBytes = Math.round((state.imageBase64.length * 3)/4);
+    canvas.style.display='block';
+    video.style.display='none';
+    selfieStatus.textContent = 'सेल्फ़ी तैयार ✓';
+  }catch(err){
+    showErr('फ़ाइल पढ़ने में समस्या', err);
   }
 }
 
-/* ========= SEARCH ========= */
+/* ====== UI EVENTS ====== */
+btnSnap.addEventListener('click', async (e)=>{
+  e.preventDefault();
+  if(!video.srcObject){ await startCamera(); await sleep(200); }
+  snapshot();
+  canvas.style.display='block';
+  video.style.display='none';
+  selfieStatus.textContent = `सेल्फ़ी तैयार ✓ (${state.imgBytes} bytes)`;
+});
+
+btnRetake.addEventListener('click', (e)=>{
+  e.preventDefault();
+  canvas.style.display='none';
+  video.style.display='block';
+  state.imageBase64 = '';
+  selfieStatus.textContent = 'सेल्फ़ी फिर से लें या फ़ाइल चुनें।';
+});
+
+fileEl.addEventListener('change', (e)=>{
+  const f = e.target.files?.[0];
+  if(f){ state.lastFileName = f.name; useFile(f); }
+});
+
+btnSearch.addEventListener('click', (e)=>{ e.preventDefault(); doSearch(); });
+
+/* ====== SEARCH ====== */
+function validMobile(m){
+  return /^\d{10}$/.test((m||'').trim());
+}
+function statusMsg(msg, type='info'){
+  statusEl.textContent = msg || '';
+  statusEl.className = type==='warn' ? 'muted' : '';
+}
+
+async function fetchSmart(url, opt){
+  const resp = await fetch(url, opt);
+  let dataText = '';
+  try{
+    if(resp.headers.get('content-type')?.includes('application/json')){
+      const j = await resp.json();
+      return { ok: resp.ok, status: resp.status, data: j };
+    }else{
+      dataText = await resp.text();
+      return { ok: resp.ok, status: resp.status, data: dataText };
+    }
+  }catch(e){
+    return { ok:false, status: resp.status, data: dataText || 'JSON parse error' };
+  }
+}
+
 async function doSearch(){
-  clearMsg();
+  errBox.open = false; errText.textContent='';
+  const nm = (nameEl.value||'').trim();
+  const mb = (mobileEl.value||'').trim();
 
-  const name = byId('name').value.trim();
-  const mobile = byId('mobile').value.trim();
+  if(!nm){ showMsg('कृपया नाम भरें।'); return; }
+  if(!validMobile(mb)){ showMsg('कृपया 10 अंकों का मोबाइल भरें।'); return; }
 
-  if(!name){ msg('कृपया नाम भरें।','err'); return; }
-  if(!/^\d{10}$/.test(mobile)){ msg('कृपया 10 अंकों का मोबाइल भरें।','err'); return; }
-
-  // prefer selfie memory -> file -> live snap
-  let imageBase64 = lastImageBase64 || null;
-  const f = byId('file').files?.[0];
-  if(!imageBase64 && f){
-    const buf = await f.arrayBuffer();
-    imageBase64 = toBase64FromArrayBuffer(buf);
+  // prepare image
+  if(!state.imageBase64){
+    // if video running, take a shot
+    if(video.srcObject){ snapshot(); canvas.style.display='block'; video.style.display='none'; }
   }
-  if(!imageBase64 && stream){
-    const c = canvasFromVideo();
-    const blob = await new Promise(res => c.toBlob(b=>res(b),'image/jpeg',0.9));
-    const buf = await blob.arrayBuffer();
-    imageBase64 = toBase64FromArrayBuffer(buf);
+  if(!state.imageBase64){
+    showMsg('कृपया सेल्फ़ी लें या फ़ाइल चुनें।'); return;
   }
 
-  byId('btnSearch').disabled = true;
-  msg('खोज चल रही है…', 'info');
+  btnSearch.disabled = true;
+  showMsg('खोज जारी है…');
+
+  const body = {
+    eventId: DEFAULT_EVENT_ID,
+    imageBase64: state.imageBase64,
+    name: nm,
+    mobile: mb,
+    sim: DEFAULT_SIM
+  };
 
   try{
-    const payload = {
-      name, mobile,
-      sim: DEFAULT_SIM
-    };
-    if(imageBase64) payload.imageBase64 = imageBase64;
-
-    const resp = await fetch(API_BASE + '/search', {
+    const r = await fetchSmart(API_BASE + '/search', {
       method:'POST',
-      headers:{'content-type':'application/json'},
-      body: JSON.stringify(payload)
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
     });
 
-    if(!resp.ok){
-      const txt = await resp.text().catch(()=> '');
-      throw Object.assign(new Error('API '+resp.status), {status:resp.status, body:txt});
+    if(!r.ok){
+      showMsg(`सर्वर में दिक्कत: API ${r.status}`, true);
+      errText.textContent = (typeof r.data==='string') ? r.data : JSON.stringify(r.data,null,2);
+      errBox.open = true;
+      btnSearch.disabled=false;
+      return;
     }
 
-    const data = await resp.json().catch(()=> ({}));
-    const results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
-
-    renderResults(results);
-    msg(`मिले ${results.length} फोटो।`, 'ok');
-  }
-  catch(err){
-    console.error('search error', err);
-    let detail = err.body ? `\nडिटेल्स: ${err.body}` : '';
-    msg(`सर्व में दिक्कत: API ${err.status||'error'}${detail}`, 'err');
-  }
-  finally{
-    byId('btnSearch').disabled = false;
+    const payload = (typeof r.data==='string') ? JSON.parseSafe(r.data) : r.data;
+    const items = payload?.items || payload?.results || payload?.matches || [];
+    renderResults(items);
+    const n = items.length|0;
+    foundEl.style.display = 'block';
+    foundEl.textContent = `मिले ${n} फोटो।`;
+    showMsg('');
+  }catch(err){
+    showErr('search error', err);
+  }finally{
+    btnSearch.disabled=false;
   }
 }
 
-/* ========= RENDER RESULTS ========= */
-function getKey(r){
-  // flexible field mapping (backend variations safe)
+JSON.parseSafe = (s)=>{ try{return JSON.parse(s);}catch{return {}} };
+
+function showMsg(msg, isErr=false){
+  if(isErr){
+    statusEl.innerHTML = `<div class="danger">${msg}</div>`;
+  }else{
+    statusEl.textContent = msg;
+  }
+}
+function showErr(title, err){
+  console.error(title, err);
+  showMsg('नेटवर्क/ब्राउज़र एरर। बाद में फिर प्रयास करें।', true);
+  errText.textContent = (err && err.stack) ? err.stack : String(err);
+  errBox.open = true;
+}
+
+/* ====== RESULTS RENDER (with fallbacks) ====== */
+function getId(r){ return r.photoId || r.id || r.imageId || ''; }
+function getScore(r){ 
+  const v = r.similarity ?? r.score ?? r.confidence ?? 0;
+  return Math.round(v * 100) / 100;
+}
+function primaryKey(r){
   return r.s3Key || r.key || r.s3key || r.path || r.urlKey || '';
 }
-function getId(r){
-  return r.photoId || r.id || r.imageId || '';
+function buildImgUrlFromKey(key){ 
+  return API_BASE + '/download?key=' + encodeURIComponent(key); 
 }
-function getScore(r){
-  return Math.round((r.similarity || r.score || r.confidence || 0) * 100) / 100;
+function buildKeyCandidates(r){
+  const prim = primaryKey(r);
+  if (prim) return [prim];
+
+  const ev  = r.eventId || r.event || DEFAULT_EVENT_ID;
+  const pid = getId(r);
+  const keys = [];
+  if(ev && pid){
+    const base = `events/${ev}/originals/${pid}`;
+    ['.jpg','.JPG','.jpeg','.JPEG','.png','.webp'].forEach(ext => keys.push(base+ext));
+  }
+  return keys;
+}
+function tryNextImg(img){
+  let rest=[];
+  try{ rest = JSON.parse(img.dataset.keys||'[]'); }catch{}
+  if(!rest.length){
+    const ph = document.createElement('div');
+    ph.className='thumb';
+    ph.style.display='flex'; ph.style.alignItems='center'; ph.style.justifyContent='center'; ph.style.color='#888';
+    ph.textContent='No preview';
+    img.replaceWith(ph);
+    return;
+  }
+  const next = rest.shift();
+  img.dataset.keys = JSON.stringify(rest);
+  img.src = buildImgUrlFromKey(next);
 }
 function cardHTML(r){
-  const s3Key = getKey(r);
-  const photoId = getId(r);
+  const pid = getId(r);
   const sim = getScore(r);
-  const imgURL = s3Key ? (API_BASE + '/download?key=' + encodeURIComponent(s3Key)) : '';
+  const keys = buildKeyCandidates(r);
+  const first = keys[0];
+
+  const imgPart = first
+    ? `<img class="thumb" loading="lazy" alt="${pid||'photo'}"
+             src="${buildImgUrlFromKey(first)}"
+             data-keys='${JSON.stringify(keys.slice(1))}'
+             onerror="tryNextImg(this)">`
+    : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#888">No preview</div>`;
+
   return `
-    <div class="card">
-      ${ imgURL
-        ? `<img class="thumb" loading="lazy" alt="${photoId||'photo'}" src="${imgURL}">`
-        : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:#888">No preview</div>`
-      }
+    <div class="cardR">
+      ${imgPart}
       <div class="meta">
-        ${photoId ? `<div><b>ID:</b> ${photoId}</div>`:''}
-        ${sim ? `<div><b>~${sim}%</b> match</div>`:''}
-        ${s3Key ? `<div style="word-break:break-all;opacity:.7">${s3Key}</div>`:''}
+        ${pid ? `<div><b>ID:</b> ${pid}</div>` : ''}
+        ${sim ? `<div><span class="pill">~${sim}%</span> match</div>` : ''}
+        ${primaryKey(r) ? `<div class="muted" style="word-break:break-all">${primaryKey(r)}</div>` : ''}
       </div>
     </div>`;
 }
 function renderResults(items){
-  const box = byId('results');
   if(!items || !items.length){
-    box.innerHTML = `<div class="msg">कोई फोटो नहीं मिला।</div>`;
+    resultsEl.innerHTML = '';
+    emptyEl.style.display='block';
     return;
   }
-  box.innerHTML = items.map(cardHTML).join('');
+  emptyEl.style.display='none';
+  resultsEl.innerHTML = items.map(cardHTML).join('');
 }
 
-/* ========= BOOT ========= */
-window.addEventListener('DOMContentLoaded', ()=>{
-  // ensure handlers also bound (inline onclick is already present)
-  byId('btnSnap')?.addEventListener('click', takeSelfie);
-  byId('btnSearch')?.addEventListener('click', doSearch);
+/* ====== AUTOSTART ====== */
+(async function init(){
+  // URL से नाम/मोबाइल prefill (optional)
+  if(param('name')) nameEl.value = param('name');
+  if(param('mobile')) mobileEl.value = param('mobile');
 
-  // try auto camera on mobile/desktop
-  startCam();
-});
-window.addEventListener('beforeunload', stopCam);
+  // कैमरा start (mobile/desktop दोनों पर)
+  await startCamera();
+  // पेज फोकस पर अगर कैमरा बंद है तो फिर से कोशिश
+  window.addEventListener('focus', ()=>{
+    if(!video.srcObject) startCamera().catch(()=>{});
+  });
+})();
 </script>
 </body>
 </html>
