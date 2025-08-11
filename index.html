@@ -49,7 +49,18 @@
       .grid-2{grid-template-columns:1fr}
       .toolbar{grid-template-columns:1fr}
     }
-  </style>
+  
+  @media (max-width: 768px){
+    #fileRow { display:none !important; }
+    #camOn, #camOff { display:none !important; }
+  }
+
+  /* Hide camera ON/OFF buttons (keep only capture) */
+  #camOn, #camOff { display:none !important; }
+  @media (max-width: 768px){
+    #fileRow { display:none !important; }
+  }
+</style>
 </head>
 <body>
 <header>भारतीय जनता पार्टी — मंदसौर</header>
@@ -60,11 +71,11 @@
     <div class="row grid-2">
       <div>
         <label>नाम</label>
-        <input id="name" placeholder="आपका नाम (optional)">
+        <input id="name" required placeholder="आपका नाम (optional)">
       </div>
       <div>
         <label>मोबाइल नंबर</label>
-        <input id="phone" placeholder="मोबाइल (optional)">
+        <input id="phone" required pattern="\d{10}" placeholder="मोबाइल (optional)">
       </div>
     </div>
 
@@ -78,7 +89,7 @@
           <button class="btn secondary" id="camOff">कैमरा बंद</button>
         </div>
       </div>
-      <div>
+      <div id="fileRow">
         <label>या फ़ाइल चुनें</label>
         <input id="file" type="file" accept="image/*">
         <div class="muted" style="margin-top:6px">PNG/WebP → JPEG auto.</div>
@@ -104,6 +115,7 @@
     </div>
 
     <div id="grid" class="grid"></div>
+<div id="pager" style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0 0"><button id="prevPage" class="btn" style="display:none">Prev</button><button id="nextPage" class="btn" style="display:none">Next</button></div>
   </section>
 
 </main>
@@ -112,34 +124,52 @@
   // ------------ CONFIG (HARDCODED; कोई reload नहीं) ------------
   const API_BASE = 'https://oidwg6gcx0.execute-api.ap-south-1.amazonaws.com/PROD2';
 
+  // === Helpers ===
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  async function startCamera(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      video.srcObject = stream;
+      return true;
+    }catch(e){
+      console.warn('camera start fail', e);
+      throw e;
+    }
+  }
+  function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; video.srcObject=null; } }
+  async function autoStartCameraIfMobile(){
+    if(!isMobile) return;
+    try{ await startCamera(); }catch(e){
+      const overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+      overlay.innerHTML='<div style="background:#fff;padding:20px;border-radius:12px;text-align:center;max-width:320px"><div style="font-weight:600;margin-bottom:10px">कैमरा अनुमति दें</div><div style="font-size:14px;margin-bottom:12px">फोटो लेने के लिए कैमरा ऑन करना ज़रूरी है।</div><button id="overlayStart" class="btn">कैमरा चालू करें</button></div>';
+      document.body.appendChild(overlay);
+      document.getElementById('overlayStart').onclick=async()=>{ try{ await startCamera(); } finally{ overlay.remove(); } };
+    }
+  }
+  window.addEventListener('load', autoStartCameraIfMobile);
+
   // ------------ CAMERA ------------
   const video = document.getElementById('video');
   let stream;
 
-  document.getElementById('camOn').onclick = async () => {
-    try{
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      video.srcObject = stream;
-    }catch(e){ alert('कैमरा उपलब्ध नहीं: '+e.message); }
-  };
-  document.getElementById('camOff').onclick = () => {
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; video.srcObject=null; }
-  };
-  document.getElementById('snap').onclick = () => {
-    if(!video.srcObject){ alert('पहले कैमरा चालू करें'); return; }
+  document.getElementById('camOn').onclick = async ()=>{ try{ await startCamera(); }catch(e){ alert('कैमरा उपलब्ध नहीं: '+e.message); } };
+  document.getElementById('camOff').onclick = ()=>{ stopCamera(); };
+  document.getElementById('snap').onclick = async () => {
+    if(!video.srcObject){ try{ await startCamera(); }catch(e){ alert('कैमरा उपलब्ध नहीं: '+e.message); return; } }
     const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight;
     c.getContext('2d').drawImage(video,0,0);
     c.toBlob(b=>{
       const f=new File([b],'selfie.jpg',{type:'image/jpeg'});
-      window.__lastCaptureFile = f; // store for manual search
-      const fi=document.getElementById('file');
-      const dt=new DataTransfer(); dt.items.add(f); fi.files=dt.files;
-      setMsg('सेल्फी कैप्चर हो गई — अब "Search" दबाएँ');
+      window.__lastCaptureFile=f; const dt=new DataTransfer(); dt.items.add(f); document.getElementById('file').files=dt.files; setMsg('सेल्फी कैप्चर हो गई — अब "Search" दबाएँ');
     },'image/jpeg',0.92);
   };
 
   // ------------ SEARCH ------------
   document.getElementById('doSearch').onclick = () => {
+    if(!document.getElementById('name').value.trim()){ alert('कृपया नाम दर्ज करें'); document.getElementById('name').focus(); return; }
+    const ph = document.getElementById('phone');
+    if(!/^\d{10}$/.test(ph.value.trim())){ alert('कृपया 10 अंकों का मोबाइल नंबर दर्ज करें'); ph.focus(); return; }
     let f = document.getElementById('file').files?.[0];
     if(!f && window.__lastCaptureFile) f = window.__lastCaptureFile;
     if(!f){ alert('कृपया selfie upload करें या कैमरा से कैप्चर करें'); return; }
@@ -178,8 +208,7 @@
       const matches = data.matches || [];
       if(!matches.length){ setMsg('कोई मैच नहीं मिला'); setFound(0); return; }
 
-      fillGrid(matches);
-      setFound(matches.length);
+      __allMatches = matches; __pageIndex = 0; renderPage();
       setMsg('मिले फोटो तैयार हैं');
     }catch(e){
       console.error(e);
@@ -220,26 +249,48 @@
     });
   }
 
-  // ------------ GRID / SELECT ------------
+  
+// === Pagination ===
+let __allMatches = [];
+let __pageIndex = 0;
+const __pageSize = 12;
+
+function renderPage(){
+  const start = __pageIndex * __pageSize;
+  const slice = __allMatches.slice(start, start + __pageSize);
+  fillGrid(slice);
+  setFound(__allMatches.length);
+  const prev = document.getElementById('prevPage');
+  const next = document.getElementById('nextPage');
+  if(prev && next){
+    prev.style.display = __pageIndex > 0 ? '' : 'none';
+    next.style.display = (start + __pageSize) < __allMatches.length ? '' : 'none';
+  }
+}
+document.getElementById('prevPage')?.addEventListener('click', ()=>{ if(__pageIndex>0){ __pageIndex--; renderPage(); } });
+document.getElementById('nextPage')?.addEventListener('click', ()=>{ if((__pageIndex+1)*__pageSize<__allMatches.length){ __pageIndex++; renderPage(); } });
+
+// ------------ GRID / SELECT ------------
   const grid = document.getElementById('grid');
 
   function clearGrid(){ grid.innerHTML=''; setFound(0); }
 
   // helper: best image src with proxy-first
   
-function bestImageSrc(m) {
+function bestImageSrc(m){
   const keyFromUrl = (u) => {
-    try {
+    try{
       const path = decodeURIComponent(new URL(u).pathname);
       return path.startsWith('/') ? path.slice(1) : path;
-    } catch { return ''; }
+    }catch{ return ''; }
   };
   const key = m.s3Key || m.s3key || keyFromUrl(m.s3url || m.url || '');
-  const direct = m.signedUrl || m.imageUrl || m.s3url || m.url || '';
+  const direct = m.imageUrl || m.signedUrl || m.s3url || m.url || '';
   if (key) return `${API_BASE}/download?key=${encodeURIComponent(key)}&t=${Date.now()}`;
   if (direct) return `${direct}${direct.includes('?') ? '&' : '?'}t=${Date.now()}`;
   return '';
 }
+
 
   function fillGrid(matches){
     grid.innerHTML = '';
@@ -259,18 +310,18 @@ function bestImageSrc(m) {
       const img = card.querySelector('img');
       img.crossOrigin = 'anonymous';
       let primary = bestImageSrc(m);
-      img.src = primary;
+      img.src = primary; img.style.cursor='pointer'; img.onclick = ()=> window.open(primary, '_blank');
 
       img.onerror = () => {
         const usedProxy = primary.startsWith(API_BASE + '/download');
-        const key2 = m.s3Key || m.s3key || (function(){ try{ const p=decodeURIComponent(new URL(m.s3url||m.url||'').pathname); return p.startsWith('/')?p.slice(1):p; }catch(e){ return ''; } })();
+        const key2 = m.s3Key || m.photoId || m.key || '';
         const direct2 = m.imageUrl || m.signedUrl || m.url || '';
         if (usedProxy && direct2) {
           primary = `${direct2}${direct2.includes('?') ? '&' : '?'}t=${Date.now()}`;
-          img.src = primary;
+          img.src = primary; img.style.cursor='pointer'; img.onclick = ()=> window.open(primary, '_blank');
         } else if (!usedProxy && key2) {
           primary = `${API_BASE}/download?key=${encodeURIComponent(key2)}&t=${Date.now()}`;
-          img.src = primary;
+          img.src = primary; img.style.cursor='pointer'; img.onclick = ()=> window.open(primary, '_blank');
         } else {
           img.onerror = null;
           img.src =
